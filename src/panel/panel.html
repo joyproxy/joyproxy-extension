@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JoyProxy 工作台</title>
+  <link rel="stylesheet" href="../shared/ui.css" />
+  <link rel="stylesheet" href="panel.css" />
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand">
+        <img src="../icons/icon32.png" width="22" height="22" alt="" />
+        <div>
+          <div class="name">JoyProxy</div>
+          <div class="tiny" id="conn-line">直连</div>
+          <div class="tiny run-line" id="run-line" hidden></div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="text-btn" id="copy-ip" hidden data-i18n="copyIp">复制 IP</button>
+      </div>
+    </header>
+
+    <div class="workspace source">
+      <nav class="tabs" id="source-tabs">
+        <button type="button" data-source="own" class="active" data-i18n="tab.own">代理地址</button>
+        <button type="button" data-source="extract" data-i18n="tab.api">API</button>
+        <button type="button" data-source="account" data-i18n="tab.account">JoyProxy</button>
+      </nav>
+      <div class="workspace-body">
+        <section class="tab-pane" data-source-pane="own">
+          <div class="card inset composer" id="composer">
+            <div class="field">
+              <div class="field-head">
+                <label data-i18n="proxy.address">代理地址</label>
+                <div class="row-actions">
+                  <button type="button" class="text-btn" data-profile-save data-i18n="save">保存</button>
+                  <button type="button" class="text-btn" id="open-import" data-i18n="import">导入</button>
+                  <button type="button" class="text-btn" data-profile-new hidden data-i18n="new">新建</button>
+                  <button type="button" class="text-btn" data-profile-del hidden data-i18n="delete">删除</button>
+                </div>
+              </div>
+              <div class="combo">
+                <input data-raw data-i18n-placeholder="proxy.placeholder" placeholder="填写或选择已保存的代理" autocomplete="off" />
+                <button type="button" class="combo-toggle" data-profile-toggle data-i18n-aria="proxy.savedList" aria-label="已保存列表"></button>
+                <div class="combo-menu" data-profile-menu hidden></div>
+              </div>
+            </div>
+            <div class="composer-actions">
+              <span class="act-wrap" data-test-wrap>
+                <button type="button" class="btn" data-test data-i18n="test">测试</button>
+              </span>
+              <span class="act-wrap" data-connect-wrap>
+                <button type="button" class="btn btn-primary" data-connect data-i18n="connect">设为代理</button>
+              </span>
+            </div>
+            <details class="adv">
+              <summary data-i18n="adv.options">高级选项</summary>
+              <div class="composer-grid">
+                <div class="seg" data-proto>
+                  <button type="button" data-v="http" class="active" data-i18n="proto.http">HTTP / HTTPS</button>
+                  <button type="button" data-v="socks5">SOCKS5</button>
+                </div>
+                <input data-user data-i18n-placeholder="user" placeholder="用户名" autocomplete="off" />
+                <input data-pass type="password" data-i18n-placeholder="pass" placeholder="密码" autocomplete="off" />
+              </div>
+              <p class="hint" data-socks-hint hidden data-i18n="socks.hint">Chrome 无法为 SOCKS5 携带账密，建议 HTTP 或对端 IP 白名单。</p>
+            </details>
+          </div>
+        </section>
+
+        <section class="tab-pane" data-source-pane="extract" hidden>
+          <div class="card inset">
+            <div class="field" style="margin-bottom:8px">
+              <div class="field-head">
+                <label>API</label>
+                <div class="row-actions">
+                  <button type="button" class="text-btn" id="ex-save" data-i18n="save">保存</button>
+                  <button type="button" class="text-btn" id="ex-import" data-i18n="import">导入</button>
+                  <button type="button" class="text-btn" id="ex-new" hidden data-i18n="new">新建</button>
+                  <button type="button" class="text-btn" id="ex-del" hidden data-i18n="delete">删除</button>
+                </div>
+              </div>
+              <div class="combo">
+                <input id="ex-url" data-i18n-placeholder="api.placeholder" placeholder="填写或选择已保存的 API" autocomplete="off" />
+                <button type="button" class="combo-toggle" id="ex-api-toggle" data-i18n-aria="proxy.savedList" aria-label="已保存列表"></button>
+                <div class="combo-menu" id="ex-api-menu" hidden></div>
+              </div>
+            </div>
+            <div class="seg" id="ex-mode">
+              <button type="button" data-v="probe" data-i18n="api.probe" data-i18n-tip="api.probe.tip" data-tip="请求一次接口并逐条测试，只统计连通率，不会改浏览器代理。成功条目可手动设为代理。">仅测试</button>
+              <button type="button" data-v="apply" data-i18n="api.apply" data-i18n-tip="api.apply.tip" data-tip="请求一次接口并逐条测试。第一条测试成功的会设为代理，其余成功条目可手动设为代理。失败不改当前设置。">测通后设为代理</button>
+            </div>
+            <label class="switch-row" style="margin-top:10px">
+              <span data-i18n="api.timed">定时更换浏览器代理</span>
+              <input type="checkbox" id="ex-timed" class="switch" />
+            </label>
+            <div id="ex-timed-fields" hidden>
+              <div class="row">
+                <div class="field">
+                  <label data-i18n="api.interval">间隔（秒，可空）</label>
+                  <input id="ex-i" type="number" min="0" step="1" data-i18n-placeholder="api.interval.ph" placeholder="空则不等待" />
+                </div>
+                <div class="field">
+                  <label data-i18n="api.count">次数（可空）</label>
+                  <input id="ex-n" type="number" min="0" max="200" data-i18n-placeholder="api.count.ph" placeholder="空则直至停止" />
+                </div>
+              </div>
+            </div>
+            <details class="adv" id="ex-adv">
+              <summary data-i18n="adv.options">高级选项</summary>
+              <div class="field" style="margin-bottom:8px">
+                <label data-i18n="api.name">名称</label>
+                <input id="ex-name" data-i18n-placeholder="api.name.ph" placeholder="可选，默认用主机名" />
+              </div>
+              <div class="field" style="margin-bottom:8px">
+                <label data-i18n="api.regex">正则（可空，默认识别 host:port）</label>
+                <input id="ex-re" data-i18n-placeholder="api.regex.ph" placeholder="可选" />
+              </div>
+              <div class="seg" id="ex-proto" style="margin-bottom:8px">
+                <button type="button" data-v="http" class="active" data-i18n="proto.http">HTTP / HTTPS</button>
+                <button type="button" data-v="socks5">SOCKS5</button>
+              </div>
+              <div class="row" style="margin-bottom:8px">
+                <input id="ex-user" data-i18n-placeholder="user" placeholder="用户名" autocomplete="off" />
+                <input id="ex-pass" type="password" data-i18n-placeholder="pass" placeholder="密码" autocomplete="off" />
+              </div>
+            </details>
+          </div>
+          <button type="button" class="btn btn-primary btn-block" id="btn-extract" data-i18n="api.start">开始测试</button>
+          <div id="extract-latest" hidden>
+            <table class="data">
+              <thead><tr><th>#</th><th data-i18n="api.col.addr">地址</th><th data-i18n="api.col.status">状态</th><th data-i18n="api.col.ms">延迟</th><th></th></tr></thead>
+              <tbody id="extract-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="tab-pane" data-source-pane="account" hidden>
+          <div id="jp-guest" class="card inset">
+            <p class="note" style="margin-bottom:12px" data-i18n="jp.loginHint">将打开网站登录页（邮箱、Google、GitHub 均可）。登录后会同步账户里的动态、静态和自定义代理，测通后即可设为浏览器代理。</p>
+            <button type="button" class="btn btn-primary btn-block" id="jp-web-login" data-i18n="jp.login">登录</button>
+          </div>
+          <div id="jp-app" hidden>
+            <div class="jp-bar">
+              <span class="tiny" id="jp-user"></span>
+              <div class="row-actions">
+                <button type="button" class="text-btn" id="jp-manage" data-i18n="jp.manage">管理</button>
+                <button type="button" class="text-btn" id="jp-refresh" data-i18n="jp.refresh">刷新</button>
+                <button type="button" class="text-btn" id="jp-logout" data-i18n="jp.logout">退出</button>
+              </div>
+            </div>
+            <p class="note" id="jp-load" hidden data-i18n="jp.loading">正在读取已购产品…</p>
+            <div id="jp-empty" class="card inset" hidden>
+              <div class="note" data-i18n="jp.empty">还没有已购产品</div>
+              <a class="link" href="https://www.joyproxy.com" target="_blank" rel="noopener" data-i18n="jp.buy">去网站查看</a>
+            </div>
+            <div id="jp-form" hidden>
+              <div class="card inset">
+                <div class="seg" id="jp-kind">
+                  <button type="button" data-v="dynamic" class="active" data-i18n="jp.kind.dynamic">动态</button>
+                  <button type="button" data-v="static" data-i18n="jp.kind.static" data-i18n-tip="jp.kind.static.tip" data-tip="静态与自定义端口合为一类。轮换以网站设置为准，插件内不轮换。">静态</button>
+                </div>
+                <div id="jp-dynamic">
+                  <div class="field" style="margin-top:10px">
+                    <label data-i18n="jp.network">网络</label>
+                    <select id="jp-network"></select>
+                  </div>
+                  <div class="row" style="margin-top:8px">
+                    <div class="field">
+                      <label data-i18n="jp.country">国家</label>
+                      <select id="jp-country"></select>
+                    </div>
+                    <div class="field">
+                      <label data-i18n="jp.duration">时长</label>
+                      <select id="jp-duration"></select>
+                    </div>
+                  </div>
+                </div>
+                <div id="jp-static" hidden>
+                  <div class="field" style="margin-top:10px">
+                    <label data-i18n="jp.line">线路</label>
+                    <select id="jp-line"></select>
+                  </div>
+                </div>
+                <div class="seg" id="jp-mode" style="margin-top:10px">
+                  <button type="button" data-v="probe" class="active" data-i18n="api.probe" data-i18n-tip="jp.probe.tip" data-tip="提取一条并测试，只看是否连通，不会改浏览器代理。成功后可手动设为代理。">仅测试</button>
+                  <button type="button" data-v="apply" data-i18n="api.apply" data-i18n-tip="jp.apply.tip" data-tip="提取一条并测试。测通后设为浏览器代理。失败不改当前设置。">测通后设为代理</button>
+                </div>
+                <div id="jp-timed-wrap">
+                  <label class="switch-row" style="margin-top:10px">
+                    <span data-i18n="api.timed">定时更换浏览器代理</span>
+                    <input type="checkbox" id="jp-timed" class="switch" />
+                  </label>
+                  <div id="jp-timed-fields" hidden>
+                    <div class="row">
+                      <div class="field">
+                        <label data-i18n="api.interval">间隔（秒，可空）</label>
+                        <input id="jp-i" type="number" min="0" step="1" data-i18n-placeholder="api.interval.ph" placeholder="空则不等待" />
+                      </div>
+                      <div class="field">
+                        <label data-i18n="api.count">次数（可空）</label>
+                        <input id="jp-n" type="number" min="0" max="200" data-i18n-placeholder="api.count.ph" placeholder="空则直至停止" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <details class="adv" id="jp-adv">
+                  <summary data-i18n="adv.options">高级选项</summary>
+                  <div class="seg" id="jp-proto" style="margin-top:8px">
+                    <button type="button" data-v="http" class="active" data-i18n="proto.http">HTTP / HTTPS</button>
+                    <button type="button" data-v="socks5">SOCKS5</button>
+                  </div>
+                  <p class="hint" id="jp-socks-hint" hidden data-i18n="socks.hint">Chrome 无法为 SOCKS5 携带账密，建议 HTTP 或对端 IP 白名单。</p>
+                </details>
+              </div>
+              <button type="button" class="btn btn-primary btn-block" id="jp-run" data-i18n="api.start">开始测试</button>
+              <div id="jp-latest" hidden>
+                <table class="data">
+                  <thead><tr><th>#</th><th data-i18n="api.col.addr">地址</th><th data-i18n="api.col.status">状态</th><th data-i18n="api.col.ms">延迟</th><th></th></tr></thead>
+                  <tbody id="jp-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="workspace lower">
+      <nav class="tabs" id="lower-tabs">
+        <button type="button" data-lower="notices" class="active" data-i18n="notice.title">运行状态</button>
+        <button type="button" data-lower="tools" data-i18n="tab.tools">高级</button>
+        <button type="button" data-lower="system" data-i18n="tab.system">系统</button>
+      </nav>
+      <div class="workspace-body">
+        <section class="tab-pane" data-lower-pane="notices">
+          <div class="notice-board" id="notice-board">
+            <div class="notice-head">
+              <span></span>
+              <button type="button" class="text-btn" id="clear-notices" data-i18n="notice.clear">清空</button>
+            </div>
+            <div class="notice-alert" id="notice-lock" hidden></div>
+            <div class="notice-scroll" id="notice-scroll"></div>
+          </div>
+        </section>
+
+        <section class="tab-pane" data-lower-pane="tools" hidden>
+          <div class="card inset">
+            <div class="section-head"><span data-i18n="tools.common">常用</span></div>
+            <div class="field" style="margin-top:8px">
+              <div class="field-head">
+                <label data-i18n="priv.ua" data-i18n-tip="priv.ua.tip" data-tip="网页看到的浏览器标识。和真实环境差太多时，部分站点可能风控。">User-Agent</label>
+                <label class="rand"><input type="checkbox" id="rand-ua" /><span data-i18n="rand">每次设为代理时随机</span></label>
+              </div>
+              <select id="priv-ua"></select>
+            </div>
+            <div class="field" id="priv-ua-custom-wrap" hidden style="margin-top:8px">
+              <label data-i18n="priv.uaCustom" data-i18n-tip="priv.uaCustom.tip" data-tip="填写完整 UA 字符串，将覆盖上方预设。">自定义 User-Agent</label>
+              <input id="priv-ua-custom" placeholder="Mozilla/5.0 …" />
+            </div>
+            <div class="check-row">
+              <label class="check">
+                <input type="checkbox" id="priv-webrtc" />
+                <span data-i18n="priv.webrtc" data-i18n-tip="priv.webrtc.tip" data-tip="降低通过 WebRTC 泄漏真实 IP 的可能。无法保证所有通道都被挡住。">限制 WebRTC</span>
+              </label>
+              <label class="rand"><input type="checkbox" id="rand-webrtc" /><span data-i18n="rand">每次设为代理时随机</span></label>
+            </div>
+            <div class="tool-actions" style="margin-top:12px">
+              <button type="button" class="btn" data-clean="cookies" data-i18n="clean.cookies" data-i18n-tip="clean.cookies.tip" data-tip="请先切到目标网页。只清理当前站点的 Cookie。">清理当前站点 Cookie</button>
+              <button type="button" class="btn" data-clean="site" data-i18n="clean.site" data-i18n-tip="clean.site.tip" data-tip="请先切到目标网页。包含 Cookie、本地存储与该站缓存。">清理当前站点数据</button>
+            </div>
+          </div>
+          <div class="card inset">
+            <div class="section-head"><span data-i18n="route.title" data-i18n-tip="route.title.tip" data-tip="决定哪些地址走当前浏览器代理。改完会自动保存。">代理范围</span></div>
+            <div class="seg" id="proxy-mode" style="margin-top:8px">
+              <button type="button" data-v="all" class="active" data-i18n="route.all" data-i18n-tip="route.all.tip" data-tip="除下方名单外，所有请求都走代理。">全部走代理</button>
+              <button type="button" data-v="allow" data-i18n="route.allow" data-i18n-tip="route.allow.tip" data-tip="只有名单里的域名 / IP / 网址走代理，其余直连。">仅名单走代理</button>
+            </div>
+            <div class="field" id="proxy-include-wrap" hidden style="margin-top:8px">
+              <label data-i18n="route.include" data-i18n-tip="route.include.tip" data-tip="一行一条。支持域名、*.通配、IP 或完整网址。">走代理</label>
+              <textarea id="proxy-include" rows="8" placeholder="example.com&#10;*.google.com&#10;1.2.3.4"></textarea>
+            </div>
+            <div class="field" id="proxy-exclude-wrap" style="margin-top:8px">
+              <label data-i18n="route.exclude" data-i18n-tip="route.exclude.tip" data-tip="一行一条。这些地址直连，不经过当前代理。">不走代理</label>
+              <textarea id="proxy-exclude" rows="8" placeholder="localhost&#10;*.joyproxy.com"></textarea>
+            </div>
+          </div>
+          <details class="adv" id="priv-more">
+            <summary data-i18n="tools.more">更多选项</summary>
+            <div class="card inset" style="margin-top:8px">
+              <div class="field">
+                <div class="field-head">
+                  <label data-i18n="priv.lang" data-i18n-tip="priv.lang.tip" data-tip="影响页面读到的语言，以及请求里的 Accept-Language。">语言</label>
+                  <label class="rand"><input type="checkbox" id="rand-lang" /><span data-i18n="rand">每次设为代理时随机</span></label>
+                </div>
+                <select id="priv-lang"></select>
+              </div>
+              <div class="field" style="margin-top:8px">
+                <div class="field-head">
+                  <label data-i18n="priv.tz" data-i18n-tip="priv.tz.tip" data-tip="影响页面读到的时区。建议与出口 IP 所在地一致，以免对不上。">时区</label>
+                  <label class="rand"><input type="checkbox" id="rand-tz" /><span data-i18n="rand">每次设为代理时随机</span></label>
+                </div>
+                <select id="priv-tz"></select>
+              </div>
+              <div class="field" style="margin-top:8px">
+                <div class="field-head">
+                  <label data-i18n="priv.screen" data-i18n-tip="priv.screen.tip" data-tip="页面读到的屏幕宽高，用于降低分辨率指纹。">屏幕分辨率</label>
+                  <label class="rand"><input type="checkbox" id="rand-screen" /><span data-i18n="rand">每次设为代理时随机</span></label>
+                </div>
+                <select id="priv-screen"></select>
+              </div>
+              <div class="field" style="margin-top:8px">
+                <div class="field-head">
+                  <label data-i18n="priv.dpr" data-i18n-tip="priv.dpr.tip" data-tip="对应 window.devicePixelRatio，常见为 1、2、3。">设备像素比</label>
+                  <label class="rand"><input type="checkbox" id="rand-dpr" /><span data-i18n="rand">每次设为代理时随机</span></label>
+                </div>
+                <select id="priv-dpr"></select>
+              </div>
+              <div class="field" style="margin-top:8px">
+                <div class="field-head">
+                  <label data-i18n="priv.hw" data-i18n-tip="priv.hw.tip" data-tip="对应 navigator.hardwareConcurrency。">CPU 核心数</label>
+                  <label class="rand"><input type="checkbox" id="rand-hw" /><span data-i18n="rand">每次设为代理时随机</span></label>
+                </div>
+                <select id="priv-hw"></select>
+              </div>
+              <div class="field" style="margin-top:8px">
+                <div class="field-head">
+                  <label data-i18n="priv.mem" data-i18n-tip="priv.mem.tip" data-tip="对应 navigator.deviceMemory，单位 GB。">设备内存</label>
+                  <label class="rand"><input type="checkbox" id="rand-mem" /><span data-i18n="rand">每次设为代理时随机</span></label>
+                </div>
+                <select id="priv-mem"></select>
+              </div>
+              <div class="field" style="margin-top:8px">
+                <div class="field-head">
+                  <label data-i18n="priv.touch" data-i18n-tip="priv.touch.tip" data-tip="对应 navigator.maxTouchPoints。桌面设备一般是 0。">触控点数</label>
+                  <label class="rand"><input type="checkbox" id="rand-touch" /><span data-i18n="rand">每次设为代理时随机</span></label>
+                </div>
+                <select id="priv-touch"></select>
+              </div>
+              <div class="field" style="margin-top:8px">
+                <div class="field-head">
+                  <label data-i18n="priv.webgl" data-i18n-tip="priv.webgl.tip" data-tip="伪装 WebGL 渲染器信息。无法更改真实显卡驱动。">WebGL 显卡</label>
+                  <label class="rand"><input type="checkbox" id="rand-webgl" /><span data-i18n="rand">每次设为代理时随机</span></label>
+                </div>
+                <select id="priv-webgl"></select>
+              </div>
+              <div class="field" style="margin-top:8px">
+                <div class="field-head">
+                  <label data-i18n="priv.fonts" data-i18n-tip="priv.fonts.tip" data-tip="伪装页面可探测到的字体集合。">字体列表</label>
+                  <label class="rand"><input type="checkbox" id="rand-fonts" /><span data-i18n="rand">每次设为代理时随机</span></label>
+                </div>
+                <select id="priv-fonts"></select>
+              </div>
+              <div class="check-row">
+                <label class="check">
+                  <input type="checkbox" id="priv-canvas" />
+                  <span data-i18n="priv.canvas" data-i18n-tip="priv.canvas.tip" data-tip="给 Canvas 读数加少量噪声，减轻固定指纹。可能影响极少数画布校验。">Canvas 轻微噪声</span>
+                </label>
+                <label class="rand"><input type="checkbox" id="rand-canvas" /><span data-i18n="rand">每次设为代理时随机</span></label>
+              </div>
+              <div class="check-row">
+                <label class="check">
+                  <input type="checkbox" id="priv-referer" />
+                  <span data-i18n="priv.referer" data-i18n-tip="priv.referer.tip" data-tip="去掉跳转来源地址。部分站点登录或防盗链可能受影响。">去除 Referer</span>
+                </label>
+                <label class="rand"><input type="checkbox" id="rand-referer" /><span data-i18n="rand">每次设为代理时随机</span></label>
+              </div>
+              <div class="check-row">
+                <label class="check">
+                  <input type="checkbox" id="priv-dnt" />
+                  <span data-i18n="priv.dnt" data-i18n-tip="priv.dnt.tip" data-tip="在请求中带上 DNT: 1。站点可以忽略，不保证生效。">发送 Do Not Track</span>
+                </label>
+                <label class="rand"><input type="checkbox" id="rand-dnt" /><span data-i18n="rand">每次设为代理时随机</span></label>
+              </div>
+              <div class="tool-actions" style="margin-top:12px">
+                <button type="button" class="btn" data-clean="cookies-all" data-i18n="clean.allCookies" data-i18n-tip="clean.allCookies.tip" data-tip="清除浏览器里所有站点的 Cookie，登录态会掉。">清理全部 Cookie</button>
+                <button type="button" class="btn" data-clean="cache" data-i18n="clean.cache" data-i18n-tip="clean.cache.tip" data-tip="清除浏览器缓存，不会删除 Cookie。">清理缓存</button>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section class="tab-pane" data-lower-pane="system" hidden>
+          <div class="card inset">
+            <div class="section-head"><span data-i18n="sys.appearance">界面</span></div>
+            <div class="field" style="margin-top:8px">
+              <label data-i18n="sys.language" data-i18n-tip="sys.language.tip" data-tip="优先使用浏览器界面语言。对不上简体中文、繁体中文或英语时，默认英语。改过之后会记住你的选择。">界面语言</label>
+              <select id="sys-ui-lang">
+                <option value="auto">跟随浏览器</option>
+                <option value="en">English</option>
+                <option value="zh-CN">简体中文</option>
+                <option value="zh-TW">繁體中文</option>
+              </select>
+            </div>
+            <div class="field" style="margin-top:8px">
+              <label data-i18n="sys.theme" data-i18n-tip="sys.theme.tip" data-tip="扩展界面颜色。跟随浏览器时按系统浅色/深色；识别不到则用深色。改过之后会记住你的选择。">外观</label>
+              <select id="sys-ui-theme">
+                <option value="auto">跟随浏览器</option>
+                <option value="light">浅色</option>
+                <option value="dark">深色</option>
+              </select>
+            </div>
+          </div>
+          <div class="card inset">
+            <div class="section-head"><span data-i18n="sys.channel">检测通道</span></div>
+            <p class="tiny" style="margin-top:8px" data-i18n="sys.channel.note">测试代理与显示真实 IP / 国家时请求这个地址。预设通道按 JSON 取出 IP 和国家字段；自定义则显示原文、不解析。</p>
+            <div class="field" style="margin-top:8px">
+              <label data-i18n="sys.geo">Target / IP+Geo Channel</label>
+              <select id="sys-geo"></select>
+            </div>
+            <div class="field" id="sys-geo-custom-wrap" hidden style="margin-top:8px">
+              <label data-i18n="sys.geoCustom">自定义 Target URL</label>
+              <input id="sys-geo-custom" placeholder="https://api.example.com/ip" />
+            </div>
+          </div>
+          <div class="card inset">
+            <div class="section-head"><span data-i18n="sys.about">关于</span></div>
+            <div class="about-line" style="margin-top:8px" data-i18n="sys.app">JoyProxy 浏览器扩展</div>
+            <div class="tiny" id="sys-version">版本 —</div>
+            <div class="legal-links">
+              <a class="link" href="https://www.joyproxy.com/terms.html" target="_blank" rel="noopener" data-i18n="sys.terms">服务条款</a>
+              <a class="link" href="https://www.joyproxy.com/privacy.html" target="_blank" rel="noopener" data-i18n="sys.privacy">隐私政策</a>
+              <a class="link" href="https://www.joyproxy.com/service.html" target="_blank" rel="noopener" data-i18n="sys.service">服务协议</a>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet" id="import-sheet" hidden>
+    <div class="sheet-card">
+      <div class="sheet-title" data-i18n="import.proxy">导入代理</div>
+      <p class="muted small" data-i18n="import.proxy.note">每行一条 host:port 或完整 URI</p>
+      <textarea id="import-text" rows="8" placeholder="1.2.3.4:1080&#10;socks5://user:pass@host:1080"></textarea>
+      <div class="row">
+        <button type="button" class="btn btn-primary" id="import-go" data-i18n="import">导入</button>
+        <button type="button" class="btn" id="import-cancel" data-i18n="cancel">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet" id="import-api-sheet" hidden>
+    <div class="sheet-card">
+      <div class="sheet-title" data-i18n="import.api">导入 API</div>
+      <p class="muted small" data-i18n="import.api.note">每行一个 API 地址</p>
+      <textarea id="import-api-text" rows="8" placeholder="https://example.com/api/proxies"></textarea>
+      <div class="row">
+        <button type="button" class="btn btn-primary" id="import-api-go" data-i18n="import">导入</button>
+        <button type="button" class="btn" id="import-api-cancel" data-i18n="cancel">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="panel.js" type="module"></script>
+</body>
+</html>

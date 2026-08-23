@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JoyProxy 选项</title>
+  <link rel="stylesheet" href="../shared/ui.css" />
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <div class="page">
+    <header>
+      <img src="../icons/icon48.png" width="36" height="36" alt="" />
+      <div>
+        <h1>JoyProxy 选项</h1>
+        <p class="muted">很少打开。日常测通、连接请用工具栏 Popup。</p>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>Bypass 域名</h2>
+      <p class="muted small">这些地址不走代理。预填了 JoyProxy 站点与 API，可增删，一行一条。</p>
+      <textarea id="bypass" rows="8"></textarea>
+    </section>
+
+    <section class="card">
+      <h2>IP + Geo 检测通道</h2>
+      <p class="muted small">测通与真实 IP 查询走公共通道，不消耗 JoyProxy 流量。</p>
+      <select id="geo">
+        <option value="ipinfo">ipinfo.io (https://ipinfo.io/json)</option>
+        <option value="ipwhois">ipwhois.app (https://ipwhois.app/json/)</option>
+        <option value="ip-api">ip-api.com (http://ip-api.com/json/)</option>
+        <option value="myip">api.myip.com (https://api.myip.com)</option>
+        <option value="custom">自定义 URL（原文，不解析 JSON）</option>
+      </select>
+      <div class="field" id="custom-wrap" hidden>
+        <label>自定义 URL</label>
+        <input id="custom-url" placeholder="https://api.example.com/ip" />
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>连接卫生</h2>
+      <label class="check">
+        <input type="checkbox" id="webrtc" />
+        <span>连接成功后限制 WebRTC（默认关。可能影响部分会议/通话网站）</span>
+      </label>
+      <p class="muted small" style="margin-top:10px">
+        SOCKS5 带用户名密码时，Chrome 无法完整携带账密。请改用 HTTP，或让对端把本机出口 IP 加入白名单。插件不会静默失败。
+      </p>
+    </section>
+
+    <div class="row">
+      <button class="btn btn-primary" id="save">保存</button>
+      <button class="btn btn-danger" id="restore">清除扩展代理并恢复接管前设置</button>
+    </div>
+    <p class="tiny" id="msg"></p>
+  </div>
+  <script src="options.js" type="module"></script>
+</body>
+</html>

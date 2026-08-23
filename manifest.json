@@ -1,0 +1,61 @@
+{
+  "manifest_version": 3,
+  "name": "JoyProxy",
+  "version": "0.1.2",
+  "description": "浏览器代理工作台：粘贴、测通、连接任意代理。账号是加速器，不是门票。",
+  "minimum_chrome_version": "114",
+  "icons": {
+    "16": "src/icons/icon16.png",
+    "32": "src/icons/icon32.png",
+    "48": "src/icons/icon48.png",
+    "128": "src/icons/icon128.png"
+  },
+  "action": {
+    "default_title": "JoyProxy · 直连",
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "src/icons/icon16-gray.png",
+      "32": "src/icons/icon32-gray.png",
+      "48": "src/icons/icon48-gray.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "options_ui": {
+    "page": "src/options/options.html",
+    "open_in_tab": true
+  },
+  "side_panel": {
+    "default_path": "src/panel/panel.html"
+  },
+  "permissions": [
+    "proxy",
+    "storage",
+    "sidePanel",
+    "contextMenus",
+    "webRequest",
+    "webRequestAuthProvider",
+    "privacy",
+    "browsingData",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
+    "scripting",
+    "webNavigation",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.joyproxy.com/*",
+        "https://joyproxy.com/*"
+      ],
+      "js": ["src/content/joyproxy-auth.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

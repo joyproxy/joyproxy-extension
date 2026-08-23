@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JoyProxy</title>
+  <link rel="stylesheet" href="../shared/ui.css" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="brand">
+        <img src="../icons/icon32.png" width="22" height="22" alt="" />
+        <span>JoyProxy</span>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="text-btn" id="copy-ip" hidden data-i18n="copyIp">复制 IP</button>
+        <button type="button" class="text-btn" id="btn-login" hidden data-i18n="jp.login">登录</button>
+        <button type="button" class="text-btn" id="btn-logout" hidden data-i18n="jp.logout">退出</button>
+      </div>
+    </header>
+
+    <div id="status-strip" class="status">
+      <span class="dot off" id="status-dot"></span>
+      <span id="status-text">直连</span>
+    </div>
+    <div class="tiny run-line" id="run-line" hidden></div>
+
+    <main>
+      <section class="card composer" id="composer">
+        <div class="field">
+          <div class="field-head">
+            <label data-i18n="proxy.address">代理地址</label>
+            <div class="row-actions">
+              <button type="button" class="text-btn" data-profile-save data-i18n="save">保存</button>
+              <button type="button" class="text-btn" data-profile-new hidden data-i18n="new">新建</button>
+            </div>
+          </div>
+          <div class="combo">
+            <input data-raw data-i18n-placeholder="proxy.placeholder" placeholder="填写或选择已保存的代理" autocomplete="off" />
+            <button type="button" class="combo-toggle" data-profile-toggle data-i18n-aria="proxy.savedList" aria-label="已保存列表"></button>
+            <div class="combo-menu" data-profile-menu hidden></div>
+          </div>
+        </div>
+        <div class="composer-actions">
+          <span class="act-wrap" data-test-wrap>
+            <button type="button" class="btn" data-test data-i18n="test">测试</button>
+          </span>
+          <span class="act-wrap" data-connect-wrap>
+            <button type="button" class="btn btn-primary" data-connect data-i18n="connect">设为代理</button>
+          </span>
+        </div>
+        <details class="adv">
+          <summary data-i18n="adv.options">高级选项</summary>
+          <div class="composer-grid">
+            <div class="seg" data-proto>
+              <button type="button" data-v="http" class="active" data-i18n="proto.http">HTTP / HTTPS</button>
+              <button type="button" data-v="socks5">SOCKS5</button>
+            </div>
+            <input data-user data-i18n-placeholder="user" placeholder="用户名" autocomplete="off" />
+            <input data-pass type="password" data-i18n-placeholder="pass" placeholder="密码" autocomplete="off" />
+          </div>
+          <p class="hint" data-socks-hint hidden data-i18n="socks.hint">Chrome 无法为 SOCKS5 携带账密，建议 HTTP 或对端 IP 白名单。</p>
+        </details>
+      </section>
+
+      <section class="card" id="jp-quick" hidden>
+        <div class="field-head">
+          <label data-i18n="tab.account">JoyProxy</label>
+          <span class="tiny" id="jp-user"></span>
+        </div>
+        <select id="jp-product"></select>
+        <div class="composer-actions" style="margin-top:8px">
+          <span class="act-wrap">
+            <button type="button" class="btn" id="jp-test" data-i18n="test">测试</button>
+          </span>
+          <span class="act-wrap">
+            <button type="button" class="btn btn-primary" id="jp-apply" data-i18n="connect">设为代理</button>
+          </span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <button type="button" class="btn btn-ghost btn-block" id="open-panel" data-i18n="popup.workbench">打开工作台</button>
+    </footer>
+  </div>
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

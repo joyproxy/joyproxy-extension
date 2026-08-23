@@ -1,0 +1,76 @@
+html, body {
+  width: 360px;
+  min-height: 0;
+  max-height: 580px;
+  overflow: hidden;
+  background:
+    radial-gradient(520px 220px at 0% -20%, rgba(102, 126, 234, .28), transparent 60%),
+    var(--bg);
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  max-height: 580px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 8px;
+  gap: 10px;
+}
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 750; letter-spacing: .2px; }
+.brand img { border-radius: 6px; }
+.header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.row-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+.status {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 14px 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  font-size: 12px;
+}
+#status-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.run-line { margin: 0 14px 8px; color: var(--amber); }
+
+main {
+  flex: 1;
+  overflow: auto;
+  padding: 0 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+main::-webkit-scrollbar { width: 8px; }
+main::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 8px; }
+
+.composer-grid {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.9fr) 1fr 1fr;
+  gap: 8px;
+}
+.composer-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.composer-actions .act-wrap { display: flex; min-width: 0; }
+.composer-actions [data-test-wrap] { flex: 0 0 auto; }
+.composer-actions [data-connect-wrap] { flex: 1; }
+.composer-actions [data-test] {
+  min-width: 5.5em;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+.composer-actions [data-connect] { flex: 1; min-width: 0; }
+
+.foot {
+  padding: 8px 14px 12px;
+  border-top: 1px solid var(--border);
+  background: rgba(0,0,0,.12);
+}

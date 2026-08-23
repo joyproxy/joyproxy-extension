@@ -1,0 +1,27 @@
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 400px at 10% -10%, rgba(102,126,234,.2), transparent 55%),
+    var(--bg);
+}
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+header { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+header img { border-radius: 10px; }
+h1 { font-size: 22px; }
+h2 { font-size: 15px; margin-bottom: 8px; }
+.card { padding: 16px; }
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+.check input { width: 16px; height: 16px; margin-top: 3px; accent-color: #7c8cff; }
+#custom-wrap { margin-top: 10px; }
