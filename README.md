@@ -1,6 +1,7 @@
 # JoyProxy Extension
 
 - **Official website:** https://www.joyproxy.com
+- **Extension privacy policy:** https://www.joyproxy.com/privacy-extension.html
 - **Repository:** https://github.com/joyproxy/joyproxy-extension
 
 > **JoyProxy** provides high-performance global proxy infrastructure and developer tools. Visit **https://www.joyproxy.com** for residential, datacenter, business/ISP, and mobile proxy services.
@@ -18,6 +19,7 @@
 You can test and apply **your own** proxies without a JoyProxy account. Sign in only when you want to use products purchased on the website. Using your own proxy does not consume JoyProxy traffic.
 
 - **Official website:** https://www.joyproxy.com
+- **Extension privacy policy:** https://www.joyproxy.com/privacy-extension.html
 - **Repository:** https://github.com/joyproxy/joyproxy-extension
 - **Related tools:** [Tester](https://github.com/joyproxy/joyproxy-tester) · [Android client](https://github.com/joyproxy/joyproxy-client-android) · [Proxy server](https://github.com/joyproxy/joyproxy-server)
 
@@ -118,7 +120,7 @@ The extension changes **this browser’s** proxy (`chrome.proxy`). It does **not
 | `browsingData` | Clear cookies or cache from the workbench |
 | Host access `<all_urls>` | Route arbitrary sites through the proxy and run optional page scripts |
 
-Session tokens and proxy credentials stay in this browser’s extension storage. There is no analytics SDK. Connectivity tests call the geo channel you configure (default `ipinfo.io`). Signing in talks to `www.joyproxy.com` and `api.joyproxy.com` only.
+Session tokens and proxy credentials stay in this browser’s extension storage. There is no analytics SDK. Connectivity tests call the geo channel you configure (default `ipinfo.io`). Signing in talks to `www.joyproxy.com` and `api.joyproxy.com` only. Full policy: https://www.joyproxy.com/privacy-extension.html
 
 ---
 
@@ -156,6 +158,7 @@ MIT License © 2026 JoyProxy
 不登录也能测、也能把你自己的代理设到浏览器里。只有要用官网上买的线路时，才需要登录。用自己的代理，不会扣 JoyProxy 的流量。
 
 - **官方网站：** https://www.joyproxy.com
+- **扩展隐私政策：** https://www.joyproxy.com/privacy-extension.html
 - **开源仓库：** https://github.com/joyproxy/joyproxy-extension
 - **相关工具：** [测通工具](https://github.com/joyproxy/joyproxy-tester) · [Android 客户端](https://github.com/joyproxy/joyproxy-client-android) · [代理服务端](https://github.com/joyproxy/joyproxy-server)
 
@@ -256,7 +259,7 @@ MIT License © 2026 JoyProxy
 | `browsingData` | 工作台里清理 Cookie、缓存 |
 | 访问所有网站 `<all_urls>` | 浏览才能走代理；隐私相关功能也需要 |
 
-登录信息和代理账密只存在这台电脑的扩展存储里，不会做用户统计。测通时会访问你选的 IP 查询接口（默认 `ipinfo.io`）。登录只访问 `www.joyproxy.com` 和 `api.joyproxy.com`。
+登录信息和代理账密只存在这台电脑的扩展存储里，不会做用户统计。测通时会访问你选的 IP 查询接口（默认 `ipinfo.io`）。登录只访问 `www.joyproxy.com` 和 `api.joyproxy.com`。完整说明见 https://www.joyproxy.com/privacy-extension.html
 
 ---
 
@@ -294,6 +297,7 @@ MIT License © 2026 JoyProxy
 沒登入也能測、也能把自己的代理設到瀏覽器裡。只有要用官網上買的線路時，才需要登入。用自己的代理，不會扣 JoyProxy 的流量。
 
 - **官方網站：** https://www.joyproxy.com
+- **擴充功能隱私權政策：** https://www.joyproxy.com/privacy-extension.html
 - **開源倉庫：** https://github.com/joyproxy/joyproxy-extension
 - **相關工具：** [測通工具](https://github.com/joyproxy/joyproxy-tester) · [Android 用戶端](https://github.com/joyproxy/joyproxy-client-android) · [代理伺服器](https://github.com/joyproxy/joyproxy-server)
 
@@ -394,7 +398,7 @@ MIT License © 2026 JoyProxy
 | `browsingData` | 工作台裡清理 Cookie、快取 |
 | 存取所有網站 `<all_urls>` | 瀏覽才能走代理；隱私相關功能也需要 |
 
-登入資訊和代理帳密只存在這台電腦的擴充功能儲存空間，不會做使用者統計。測通時會存取你選的 IP 查詢介面（預設 `ipinfo.io`）。登入只會連到 `www.joyproxy.com` 和 `api.joyproxy.com`。
+登入資訊和代理帳密只存在這台電腦的擴充功能儲存空間，不會做使用者統計。測通時會存取你選的 IP 查詢介面（預設 `ipinfo.io`）。登入只會連到 `www.joyproxy.com` 和 `api.joyproxy.com`。完整說明見 https://www.joyproxy.com/privacy-extension.html
 
 ---
 

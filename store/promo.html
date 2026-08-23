@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JoyProxy · 商店宣传图（按 100% 缩放后整块截图）</title>
+  <style>
+    :root {
+      --bg: #0c1020;
+      --text: #e8ecf5;
+      --muted: #8b93a8;
+      --accent: #7c8cff;
+      --green: #34d399;
+      --grad: linear-gradient(135deg, #667eea, #764ba2);
+      --font: "Segoe UI", "PingFang SC", "Microsoft YaHei UI", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: #1a1f33;
+      color: var(--text);
+      padding: 28px 24px 80px;
+    }
+    h1 { font-size: 22px; margin-bottom: 8px; }
+    .howto {
+      color: var(--muted);
+      max-width: 880px;
+      line-height: 1.55;
+      margin-bottom: 28px;
+      font-size: 14px;
+    }
+    .howto strong { color: #fde68a; }
+    nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 36px; }
+    nav a {
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    nav a:hover { text-decoration: underline; }
+    figure { margin: 0 0 48px; }
+    figcaption {
+      font-size: 13px;
+      color: #fde68a;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .board {
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+    }
+    .hero {
+      background:
+        radial-gradient(700px 280px at 12% -20%, rgba(102,126,234,.45), transparent 55%),
+        radial-gradient(500px 240px at 100% 120%, rgba(118,75,162,.4), transparent 50%),
+        var(--bg);
+    }
+    .row { display: flex; align-items: center; }
+    .logo {
+      border-radius: 18px;
+      box-shadow: 0 10px 28px rgba(0,0,0,.35);
+    }
+    .brand { font-weight: 800; letter-spacing: -.03em; }
+    .sub { color: var(--muted); }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 700;
+      color: #fff;
+      background: var(--grad);
+    }
+    .card {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .muted { color: var(--muted); }
+    .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .fake-input {
+      background: rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #c5cbe0;
+      font-size: 13px;
+    }
+    .seg { display: flex; gap: 0; background: rgba(0,0,0,.28); border-radius: 10px; padding: 3px; }
+    .seg span {
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .seg span.on { background: rgba(124,140,255,.28); color: #fff; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    th { color: var(--muted); font-weight: 600; font-size: 11px; }
+    .ok { color: var(--green); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>JoyProxy 商店图</h1>
+  <p class="howto">
+    用 Chrome 直接打开本文件。地址栏缩放必须是 <strong>100%</strong>（不要用系统显示缩放凑尺寸）。
+    每一块彩色底板就是成品尺寸，<strong>只框住底板、不要截到黄色说明文字</strong>。
+    小图 440×280、大横幅 1400×560 可直接当宣传图；1280×800 四张可当商店截图（正式上架更建议再截真实插件界面）。
+  </p>
+  <nav>
+    <a href="#t440">440×280</a>
+    <a href="#t1400">1400×560</a>
+    <a href="#s1">1280×800 弹窗</a>
+    <a href="#s2">1280×800 测通</a>
+    <a href="#s3">1280×800 产品</a>
+    <a href="#s4">1280×800 高级</a>
+  </nav>
+
+  <figure id="t440">
+    <figcaption>440 × 280 · Chrome / Edge 小宣传图</figcaption>
+    <div class="board hero" style="width:440px;height:280px;padding:22px 24px;display:flex;flex-direction:column;justify-content:space-between">
+      <div class="row" style="gap:12px">
+        <img class="logo" src="../src/icons/icon128.png" width="56" height="56" alt="" />
+        <div>
+          <div class="brand" style="font-size:26px">JoyProxy</div>
+          <div class="sub" style="font-size:13px;margin-top:2px">测通后再设为浏览器代理</div>
+        </div>
+      </div>
+      <div class="row" style="gap:8px;flex-wrap:wrap">
+        <span class="pill">自有 host:port</span>
+        <span class="pill">提取 API</span>
+        <span class="pill">已购线路</span>
+      </div>
+    </div>
+  </figure>
+
+  <figure id="t1400">
+    <figcaption>1400 × 560 · 大横幅（Marquee）</figcaption>
+    <div class="board hero" style="width:1400px;height:560px;padding:64px 72px;display:flex;align-items:center;justify-content:space-between;gap:48px">
+      <div style="max-width:720px">
+        <div class="row" style="gap:16px;margin-bottom:22px">
+          <img class="logo" src="../src/icons/icon128.png" width="72" height="72" alt="" />
+          <div class="brand" style="font-size:42px">JoyProxy</div>
+        </div>
+        <p style="font-size:28px;font-weight:700;line-height:1.35;margin-bottom:14px">在浏览器里测代理、切代理</p>
+        <p class="sub" style="font-size:18px;line-height:1.5;max-width:640px">
+          先看出口 IP 和国家，测通后再应用到当前浏览器。不登录也能用自己的代理。
+        </p>
+        <div class="row" style="gap:10px;margin-top:28px;flex-wrap:wrap">
+          <span class="pill" style="font-size:14px;padding:8px 14px">粘贴 host:port</span>
+          <span class="pill" style="font-size:14px;padding:8px 14px">提取 API</span>
+          <span class="pill" style="font-size:14px;padding:8px 14px">JoyProxy 已购线路</span>
+        </div>
+      </div>
+      <div class="card" style="width:420px;padding:22px 24px">
+        <div class="row" style="gap:10px;margin-bottom:16px">
+          <span class="dot"></span>
+          <span>直连 · 等待测通</span>
+        </div>
+        <div class="k" style="margin-bottom:8px">Proxy</div>
+        <div class="fake-input">gate.example.com:8080</div>
+        <div class="row" style="gap:10px;margin-top:16px">
+          <div class="btn" style="flex:1">测试</div>
+          <div class="btn" style="flex:1;opacity:.9">设为代理</div>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <figure id="s1">
+    <figcaption>1280 × 800 · 截图 1 · 弹窗（测通 / 设为代理）</figcaption>
+    <div class="board hero" style="width:1280px;height:800px;padding:56px 64px;display:flex;align-items:center;justify-content:center;gap:56px">
+      <div style="flex:1;max-width:520px">
+        <div class="brand" style="font-size:40px;margin-bottom:12px">先测通，再设代理</div>
+        <p class="sub" style="font-size:18px;line-height:1.55">
+          失败不会改正在用的浏览器代理。只改当前浏览器，不改系统代理。
+        </p>
+      </div>
+      <div class="card" style="width:380px;padding:20px">
+        <div class="row" style="justify-content:space-between;margin-bottom:14px">
+          <div class="row" style="gap:8px">
+            <img src="../src/icons/icon32.png" width="22" height="22" alt="" style="border-radius:6px" />
+            <strong>JoyProxy</strong>
+          </div>
+          <span class="muted" style="font-size:12px">复制 IP</span>
+        </div>
+        <div class="row" style="gap:8px;margin-bottom:14px">
+          <span class="dot"></span>
+          <span style="font-size:13px">直连 · 等待测通</span>
+        </div>
+        <div class="k" style="margin-bottom:6px">代理地址</div>
+        <div class="fake-input">user:pass@203.0.113.10:8000</div>
+        <div class="row" style="gap:8px;margin-top:14px">
+          <div class="btn" style="flex:1;padding:9px">测试</div>
+          <div class="btn" style="flex:1;padding:9px">设为代理</div>
+        </div>
+        <p class="muted" style="margin-top:14px;font-size:12px">打开工作台 →</p>
+      </div>
+    </div>
+  </figure>
+
+  <figure id="s2">
+    <figcaption>1280 × 800 · 截图 2 · 测通结果</figcaption>
+    <div class="board hero" style="width:1280px;height:800px;padding:64px 72px">
+      <div class="brand" style="font-size:32px;margin-bottom:8px">出口 IP、国家、延迟，一眼能看清</div>
+      <p class="sub" style="margin-bottom:28px">测失败不会覆盖当前代理。</p>
+      <div class="card" style="padding:8px 20px 12px">
+        <table>
+          <thead>
+            <tr><th>地址</th><th>状态</th><th>延迟</th><th>出口</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>203.0.113.10:8000</td><td class="ok">成功</td><td>186 ms</td><td>US · 203.0.113.88</td></tr>
+            <tr><td>198.51.100.4:443</td><td class="ok">成功</td><td>241 ms</td><td>JP · 198.51.100.20</td></tr>
+            <tr><td>192.0.2.15:1080</td><td style="color:#f87171;font-weight:700">失败</td><td>—</td><td>超时</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </figure>
+
+  <figure id="s3">
+    <figcaption>1280 × 800 · 截图 3 · JoyProxy 已购线路</figcaption>
+    <div class="board hero" style="width:1280px;height:800px;padding:64px 72px;display:flex;align-items:center;gap:48px">
+      <div style="flex:1">
+        <div class="brand" style="font-size:34px;margin-bottom:12px">登录后同步已购产品</div>
+        <p class="sub" style="font-size:17px;line-height:1.55">
+          这个浏览器已经登录官网，打开 JoyProxy 栏会直接带出动态 / 静态线路。不登录也能继续用自己的代理。
+        </p>
+      </div>
+      <div class="card" style="width:420px">
+        <div class="row" style="justify-content:space-between;margin-bottom:12px">
+          <span class="muted">you@company.com</span>
+          <span class="muted" style="font-size:12px">管理 · 刷新 · 退出</span>
+        </div>
+        <div class="seg" style="margin-bottom:14px">
+          <span class="on">动态</span>
+          <span>静态</span>
+        </div>
+        <div class="k" style="margin-bottom:6px">网络</div>
+        <div class="fake-input" style="margin-bottom:10px">住宅</div>
+        <div class="k" style="margin-bottom:6px">国家</div>
+        <div class="fake-input" style="margin-bottom:14px">不限</div>
+        <div class="row" style="gap:8px">
+          <div class="btn" style="flex:1;padding:9px">测试</div>
+          <div class="btn" style="flex:1;padding:9px">设为代理</div>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <figure id="s4">
+    <figcaption>1280 × 800 · 截图 4 · 高级设置</figcaption>
+    <div class="board hero" style="width:1280px;height:800px;padding:64px 72px">
+      <div class="brand" style="font-size:32px;margin-bottom:8px">工作台 · 高级</div>
+      <p class="sub" style="margin-bottom:24px">代理范围、User-Agent、WebRTC、清理 Cookie。多数项目可在每次设为代理时随机。</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card">
+          <div style="font-weight:700;margin-bottom:10px">代理范围</div>
+          <div class="seg">
+            <span class="on">全部走代理</span>
+            <span>仅名单走代理</span>
+          </div>
+          <p class="muted" style="margin-top:12px;font-size:12px">不走代理：localhost、*.joyproxy.com</p>
+        </div>
+        <div class="card">
+          <div style="font-weight:700;margin-bottom:10px">常用</div>
+          <p style="margin-bottom:8px">User-Agent · 限制 WebRTC</p>
+          <p class="muted" style="font-size:12px">清理当前站点 Cookie / 站点数据</p>
+        </div>
+        <div class="card" style="grid-column:1 / -1">
+          <div style="font-weight:700;margin-bottom:10px">更多选项</div>
+          <p class="muted" style="font-size:13px;line-height:1.6">
+            语言、时区、屏幕、像素比、CPU、内存、触控、WebGL、字体、Canvas 噪声、Referer、Do Not Track
+          </p>
+        </div>
+      </div>
+    </div>
+  </figure>
+</body>
+</html>

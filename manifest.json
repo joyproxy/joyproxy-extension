@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
   "name": "JoyProxy",
-  "version": "0.1.2",
-  "description": "浏览器代理工作台：粘贴、测通、连接任意代理。账号是加速器，不是门票。",
+  "version": "1.0.0",
+  "description": "在本浏览器中测通并设置代理。可用自己的地址、提取 API；登录后可使用已购线路。",
+  "homepage_url": "https://www.joyproxy.com",
   "minimum_chrome_version": "114",
   "icons": {
     "16": "src/icons/icon16.png",
