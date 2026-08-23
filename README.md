@@ -1,11 +1,15 @@
 # JoyProxy Extension
 
+> **Official JoyProxy** — cloud proxy IP at [joyproxy.com](https://www.joyproxy.com) (residential, mobile, ISP/business & datacenter).  
+> **Not affiliated** with the unrelated legacy Chrome extension [`sh0cked/joy-proxy`](https://github.com/sh0cked/joy-proxy).
+
+
 - **Official website:** https://www.joyproxy.com
 - **Repository:** https://github.com/joyproxy/joyproxy-extension
 
 > **JoyProxy** provides high-performance global proxy infrastructure and developer tools. Visit **https://www.joyproxy.com** for residential, datacenter, business/ISP, and mobile proxy services.
 
-[English](#english) | [中文](#中文) | [繁體中文](#繁體中文)
+[English](#english) | [简体中文](#简体中文) | [繁體中文](#繁體中文)
 
 ---
 
@@ -147,10 +151,9 @@ MIT License © 2026 JoyProxy
 
 ---
 
-<a id="中文"></a>
+<a id="简体中文"></a>
 
-## 中文
-
+## 简体中文
 **JoyProxy 浏览器扩展** 用来在 Chrome 里测代理、切代理。自己的 `host:port`、第三方提取 API、JoyProxy 已买的线路，都可以先测通，再应用到**当前这个浏览器**（不会改电脑的系统代理）。
 
 不登录也能测、也能把你自己的代理设到浏览器里。只有要用官网上买的线路时，才需要登录。用自己的代理，不会扣 JoyProxy 的流量。
