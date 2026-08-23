@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JoyProxy popup mock</title>
+  <link rel="stylesheet" href="../../src/shared/ui.css" />
+  <link rel="stylesheet" href="../../src/popup/popup.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="brand">
+        <img src="../../src/icons/icon32.png" width="22" height="22" alt="" />
+        <span>JoyProxy</span>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="text-btn" data-i="copyIp">Copy IP</button>
+        <button type="button" class="text-btn" data-i="logout">Sign out</button>
+      </div>
+    </header>
+    <div class="status">
+      <span class="dot off"></span>
+      <span id="status-text" data-i="status">Direct · 47.237.227.26 · Singapore</span>
+    </div>
+    <main>
+      <section class="card composer">
+        <div class="field">
+          <div class="field-head">
+            <label data-i="addr">Proxy address</label>
+            <div class="row-actions">
+              <button type="button" class="text-btn" data-i="save">Save</button>
+            </div>
+          </div>
+          <div class="combo">
+            <input value="user:pass@203.0.113.10:8000" readonly />
+            <button type="button" class="combo-toggle"></button>
+          </div>
+        </div>
+        <div class="composer-actions">
+          <span class="act-wrap"><button type="button" class="btn" data-i="test">Test</button></span>
+          <span class="act-wrap"><button type="button" class="btn btn-primary" data-i="connect">Set as proxy</button></span>
+        </div>
+      </section>
+      <section class="card">
+        <div class="field-head">
+          <label>JoyProxy</label>
+          <span class="tiny">admin@joyproxy.com</span>
+        </div>
+        <select>
+          <option>Custom · Malaysia · 47.77.225.175:20012</option>
+        </select>
+        <div class="composer-actions" style="margin-top:8px">
+          <span class="act-wrap"><button type="button" class="btn" data-i="test">Test</button></span>
+          <span class="act-wrap"><button type="button" class="btn btn-primary" data-i="connect">Set as proxy</button></span>
+        </div>
+      </section>
+    </main>
+    <footer class="foot">
+      <button type="button" class="btn btn-ghost btn-block" data-i="workbench">Open workbench</button>
+    </footer>
+  </div>
+  <script>
+    const EN = {
+      copyIp: "Copy IP",
+      logout: "Sign out",
+      status: "Direct · 47.237.227.26 · Singapore",
+      addr: "Proxy address",
+      save: "Save",
+      test: "Test",
+      connect: "Set as proxy",
+      workbench: "Open workbench",
+    };
+    const ZH = {
+      copyIp: "复制 IP",
+      logout: "退出",
+      status: "直连 · 47.237.227.26 · Singapore",
+      addr: "代理地址",
+      save: "保存",
+      test: "测试",
+      connect: "设为代理",
+      workbench: "打开工作台",
+    };
+    const lang = new URLSearchParams(location.search).get("lang") === "zh" ? "zh" : "en";
+    const table = lang === "zh" ? ZH : EN;
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+    document.querySelectorAll("[data-i]").forEach((el) => {
+      if (table[el.dataset.i]) el.textContent = table[el.dataset.i];
+    });
+    const opt = document.querySelector("select option");
+    if (opt) {
+      opt.textContent =
+        lang === "zh" ? "自定义 · Malaysia · 47.77.225.175:20012" : "Custom · Malaysia · 47.77.225.175:20012";
+    }
+  </script>
+</body>
+</html>

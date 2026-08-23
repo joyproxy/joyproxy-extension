@@ -5,7 +5,7 @@ import { applyI18n, setLocale, t } from "../shared/i18n.js";
 import { applyTheme, watchTheme } from "../shared/theme.js";
 import { formatIpLine } from "../shared/geo.js";
 import { call } from "../shared/rpc.js";
-import { networkLabelKey } from "../shared/joyproxy-api.js";
+import { lineDisplayLabel, networkLabelKey } from "../shared/joyproxy-api.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -124,7 +124,7 @@ function paint() {
       if (lines.length) {
         groups.push(
           `<optgroup label="${t("jp.kind.static")}">${lines
-            .map((l) => `<option value="${l.id}">${l.label}</option>`)
+            .map((l) => `<option value="${l.id}">${lineDisplayLabel(l, t)}</option>`)
             .join("")}</optgroup>`
         );
       }

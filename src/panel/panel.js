@@ -6,7 +6,7 @@ import { applyI18n, setLocale, t, UI_LOCALE_OPTIONS } from "../shared/i18n.js";
 import { applyTheme, watchTheme, UI_THEME_OPTIONS } from "../shared/theme.js";
 import { formatIpLine, GEO_CHANNEL_OPTIONS } from "../shared/geo.js";
 import { call, fmtTime } from "../shared/rpc.js";
-import { JP_DURATIONS, networkLabelKey } from "../shared/joyproxy-api.js";
+import { JP_DURATIONS, lineDisplayLabel, networkLabelKey } from "../shared/joyproxy-api.js";
 import {
   DPR_PRESETS,
   FONT_PRESETS,
@@ -936,13 +936,17 @@ function fillJpCountry(countries, current) {
 }
 
 function fillJpDuration(current) {
-  fillJpSelect(document.getElementById("jp-duration"), JP_DURATIONS, current || "2m");
+  fillJpSelect(
+    document.getElementById("jp-duration"),
+    JP_DURATIONS.map(([id, key]) => [id, t(key)]),
+    current || "2m"
+  );
 }
 
 function fillJpLine(lines, current) {
   fillJpSelect(
     document.getElementById("jp-line"),
-    lines.map((l) => [l.id, l.label]),
+    lines.map((l) => [l.id, lineDisplayLabel(l, t)]),
     current || lines[0]?.id || ""
   );
 }

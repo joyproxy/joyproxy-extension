@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JoyProxy workbench mock</title>
+  <link rel="stylesheet" href="../../src/shared/ui.css" />
+  <link rel="stylesheet" href="../../src/panel/panel.css" />
+  <style>
+    html, body { height: 100%; }
+    body { min-width: 360px; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand">
+        <img src="../../src/icons/icon32.png" width="22" height="22" alt="" />
+        <div>
+          <div class="name">JoyProxy</div>
+          <div class="tiny" id="conn-line" data-i="conn">Direct · 47.237.227.26 · Singapore</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="text-btn" data-i="copyIp">Copy IP</button>
+      </div>
+    </header>
+
+    <div class="workspace source">
+      <nav class="tabs" id="source-tabs">
+        <button type="button" data-source="own" data-i="tabOwn">Address</button>
+        <button type="button" data-source="extract" data-i="tabApi">API</button>
+        <button type="button" data-source="account" class="active" data-i="tabJp">JoyProxy</button>
+      </nav>
+      <div class="workspace-body">
+        <section class="tab-pane" data-source-pane="own" hidden>
+          <div class="card inset composer">
+            <div class="field">
+              <div class="field-head">
+                <label data-i="addr">Proxy address</label>
+                <div class="row-actions">
+                  <button type="button" class="text-btn" data-i="save">Save</button>
+                  <button type="button" class="text-btn" data-i="import">Import</button>
+                </div>
+              </div>
+              <div class="combo">
+                <input value="user:pass@203.0.113.10:8000" readonly />
+                <button type="button" class="combo-toggle"></button>
+              </div>
+            </div>
+            <div class="composer-actions">
+              <span class="act-wrap"><button type="button" class="btn" data-i="test">Test</button></span>
+              <span class="act-wrap"><button type="button" class="btn btn-primary" data-i="connect">Set as proxy</button></span>
+            </div>
+            <details class="adv">
+              <summary data-i="adv">Advanced</summary>
+            </details>
+          </div>
+        </section>
+
+        <section class="tab-pane" data-source-pane="extract" hidden>
+          <div class="card inset">
+            <div class="field" style="margin-bottom:8px">
+              <div class="field-head">
+                <label>API</label>
+                <div class="row-actions">
+                  <button type="button" class="text-btn" data-i="save">Save</button>
+                  <button type="button" class="text-btn" data-i="import">Import</button>
+                </div>
+              </div>
+              <input value="https://api.example.com/extract?token=…" readonly />
+            </div>
+            <div class="seg">
+              <button type="button" class="active" data-i="probe">Test only</button>
+              <button type="button" data-i="apply">Apply after pass</button>
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary btn-block" data-i="start">Start test</button>
+        </section>
+
+        <section class="tab-pane" data-source-pane="account">
+          <div>
+            <div class="jp-bar">
+              <span class="tiny">admin@joyproxy.com</span>
+              <div class="row-actions">
+                <button type="button" class="text-btn" data-i="manage">Manage</button>
+                <button type="button" class="text-btn" data-i="refresh">Refresh</button>
+                <button type="button" class="text-btn" data-i="logout">Sign out</button>
+              </div>
+            </div>
+            <div class="card inset">
+              <div class="seg">
+                <button type="button" data-i="rotating">Rotating</button>
+                <button type="button" class="active" data-i="stat">Static</button>
+              </div>
+              <div class="field" style="margin-top:10px">
+                <label data-i="line">Line</label>
+                <select>
+                  <option selected>Custom · Malaysia · 47.77.225.175:20012</option>
+                  <option>Static · United States · 203.0.113.88:10001</option>
+                </select>
+              </div>
+              <div class="seg" style="margin-top:10px">
+                <button type="button" class="active" data-i="probe">Test only</button>
+                <button type="button" data-i="apply">Apply after pass</button>
+              </div>
+              <details class="adv">
+                <summary data-i="adv">Advanced</summary>
+              </details>
+            </div>
+            <button type="button" class="btn btn-primary btn-block" data-i="start">Start test</button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="workspace lower">
+      <nav class="tabs" id="lower-tabs">
+        <button type="button" data-lower="notices" class="active" data-i="notices">Activity</button>
+        <button type="button" data-lower="tools" data-i="tools">Advanced</button>
+        <button type="button" data-lower="system" data-i="system">System</button>
+      </nav>
+      <div class="workspace-body">
+        <section class="tab-pane" data-lower-pane="notices">
+          <div class="notice-board">
+            <div class="notice-head">
+              <span></span>
+              <button type="button" class="text-btn" data-i="clear">Clear</button>
+            </div>
+            <div class="notice-scroll">
+              <p class="notice-line">12:31:08  Signed in admin@joyproxy.com</p>
+              <p class="notice-line ok">12:32:14  Test OK · 47.77.225.175:20012 · 186 ms · MY</p>
+            </div>
+          </div>
+        </section>
+        <section class="tab-pane" data-lower-pane="tools" hidden>
+          <div class="card inset">
+            <div class="section-head"><span data-i="common">Common</span></div>
+            <div class="field" style="margin-top:8px">
+              <div class="field-head">
+                <label>User-Agent</label>
+                <label class="rand"><input type="checkbox" /><span data-i="rand">Randomize when applying proxy</span></label>
+              </div>
+              <select>
+                <option data-i="browserDefault">Browser default</option>
+                <option>Chrome · Windows</option>
+              </select>
+            </div>
+            <div class="check-row" style="margin-top:10px">
+              <label class="check"><input type="checkbox" /><span data-i="webrtc">Restrict WebRTC</span></label>
+            </div>
+            <div class="tool-actions" style="margin-top:12px">
+              <button type="button" class="btn" data-i="cookies">Clear site cookies</button>
+              <button type="button" class="btn" data-i="siteData">Clear site data</button>
+            </div>
+          </div>
+          <div class="card inset">
+            <div class="section-head"><span data-i="route">Proxy scope</span></div>
+            <div class="seg" style="margin-top:8px">
+              <button type="button" class="active" data-i="routeAll">Proxy all</button>
+              <button type="button" data-i="routeAllow">Allow-list only</button>
+            </div>
+            <div class="field" style="margin-top:8px">
+              <label data-i="bypass">Bypass</label>
+              <textarea rows="4" readonly>localhost
+127.0.0.1
+*.joyproxy.com</textarea>
+            </div>
+          </div>
+        </section>
+        <section class="tab-pane" data-lower-pane="system" hidden>
+          <div class="card inset">
+            <div class="section-head"><span data-i="appearance">Interface</span></div>
+            <div class="field" style="margin-top:8px">
+              <label data-i="lang">Language</label>
+              <select>
+                <option>English</option>
+                <option>简体中文</option>
+                <option>繁體中文</option>
+              </select>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <script>
+    const EN = {
+      conn: "Direct · 47.237.227.26 · Singapore",
+      copyIp: "Copy IP",
+      tabOwn: "Address",
+      tabApi: "API",
+      tabJp: "JoyProxy",
+      addr: "Proxy address",
+      save: "Save",
+      import: "Import",
+      test: "Test",
+      connect: "Set as proxy",
+      adv: "Advanced",
+      probe: "Test only",
+      apply: "Apply after pass",
+      start: "Start test",
+      manage: "Manage",
+      refresh: "Refresh",
+      logout: "Sign out",
+      rotating: "Rotating",
+      stat: "Static",
+      line: "Line",
+      notices: "Activity",
+      tools: "Advanced",
+      system: "System",
+      clear: "Clear",
+      common: "Common",
+      rand: "Randomize when applying proxy",
+      browserDefault: "Browser default",
+      webrtc: "Restrict WebRTC",
+      cookies: "Clear site cookies",
+      siteData: "Clear site data",
+      route: "Proxy scope",
+      routeAll: "Proxy all",
+      routeAllow: "Allow-list only",
+      bypass: "Bypass",
+      appearance: "Interface",
+      lang: "Language",
+    };
+    const ZH = {
+      conn: "直连 · 47.237.227.26 · Singapore",
+      copyIp: "复制 IP",
+      tabOwn: "代理地址",
+      tabApi: "API",
+      tabJp: "JoyProxy",
+      addr: "代理地址",
+      save: "保存",
+      import: "导入",
+      test: "测试",
+      connect: "设为代理",
+      adv: "高级选项",
+      probe: "仅测试",
+      apply: "测通后设为代理",
+      start: "开始测试",
+      manage: "管理",
+      refresh: "刷新",
+      logout: "退出",
+      rotating: "动态",
+      stat: "静态",
+      line: "线路",
+      notices: "运行状态",
+      tools: "高级",
+      system: "系统",
+      clear: "清空",
+      common: "常用",
+      rand: "每次设为代理时随机",
+      browserDefault: "浏览器默认",
+      webrtc: "限制 WebRTC",
+      cookies: "清理当前站点 Cookie",
+      siteData: "清理当前站点数据",
+      route: "代理范围",
+      routeAll: "全部走代理",
+      routeAllow: "仅名单走代理",
+      bypass: "不走代理",
+      appearance: "界面",
+      lang: "界面语言",
+    };
+    const q = new URLSearchParams(location.search);
+    const lang = q.get("lang") === "zh" ? "zh" : "en";
+    const table = lang === "zh" ? ZH : EN;
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+    document.querySelectorAll("[data-i]").forEach((el) => {
+      const v = table[el.dataset.i];
+      if (v) el.textContent = v;
+    });
+    const lineSel = document.querySelector("select");
+    if (lineSel && lineSel.options.length) {
+      lineSel.options[0].textContent =
+        lang === "zh" ? "自定义 · Malaysia · 47.77.225.175:20012" : "Custom · Malaysia · 47.77.225.175:20012";
+      lineSel.options[1].textContent =
+        lang === "zh" ? "静态 · United States · 203.0.113.88:10001" : "Static · United States · 203.0.113.88:10001";
+    }
+    const view = q.get("view") || "account";
+    document.querySelectorAll("#source-tabs button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.source === view || (view === "tools" && b.dataset.source === "account"));
+      b.addEventListener("click", () => {
+        location.search = `lang=${lang}&view=${b.dataset.source}`;
+      });
+    });
+    document.querySelectorAll("[data-source-pane]").forEach((p) => {
+      p.hidden = p.dataset.sourcePane !== (view === "tools" || view === "system" ? "account" : view);
+    });
+    const lower = view === "tools" || view === "system" ? view : "notices";
+    document.querySelectorAll("#lower-tabs button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.lower === lower);
+      b.addEventListener("click", () => {
+        location.search = `lang=${lang}&view=${b.dataset.lower === "notices" ? "account" : b.dataset.lower}`;
+      });
+    });
+    document.querySelectorAll("[data-lower-pane]").forEach((p) => {
+      p.hidden = p.dataset.lowerPane !== lower;
+    });
+  </script>
+</body>
+</html>

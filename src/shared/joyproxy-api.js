@@ -6,10 +6,10 @@ export const JP_API = "https://api.joyproxy.com";
 export const JP_DASHBOARD = "https://www.joyproxy.com/admin-overview.html";
 
 export const JP_DURATIONS = [
-  ["30s", "30 秒"],
-  ["1m", "1 分钟"],
-  ["2m", "2 分钟"],
-  ["3m", "3 分钟"],
+  ["30s", "jp.dur.30s"],
+  ["1m", "jp.dur.1m"],
+  ["2m", "jp.dur.2m"],
+  ["3m", "jp.dur.3m"],
 ];
 
 export const JP_NETWORKS = [
@@ -153,7 +153,6 @@ function lineFromAlloc(row, kind) {
   const proxy = String(row.pwa_proxy || row.proxy || "").trim();
   const id = `${kind}-${row.allocation_id || row.id || proxy}`;
   const geo = [row.country_name || row.country_iso, row.city_name].filter(Boolean).join(" ");
-  const prefix = kind === "custom" ? "自定义" : "静态";
   return {
     id,
     kind,
@@ -163,9 +162,17 @@ function lineFromAlloc(row, kind) {
     network: normNetwork(row.network_type),
     country: row.country_iso || "",
     expire: row.expire_at ? String(row.expire_at).slice(0, 10) : "",
-    label: [prefix, geo || row.country_iso, proxy].filter(Boolean).join(" · "),
+    label: [geo || row.country_iso, proxy].filter(Boolean).join(" · "),
     status: String(row.status || "").toLowerCase(),
   };
+}
+
+export function lineDisplayLabel(line, translate) {
+  const key = line?.kind === "custom" ? "jp.kind.custom" : "jp.kind.static";
+  const prefix = typeof translate === "function" ? translate(key) : key;
+  let rest = String(line?.label || "");
+  rest = rest.replace(/^(自定义|静态|自訂|Custom|Static)\s*·\s*/i, "");
+  return [prefix, rest].filter(Boolean).join(" · ");
 }
 
 export async function fetchStaticLines(jwt) {

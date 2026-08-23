@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JoyProxy · 真实界面截图板</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei UI", system-ui, sans-serif;
+      background: #1a1f33;
+      color: #e8ecf5;
+      padding: 28px 24px 80px;
+    }
+    h1 { font-size: 22px; margin-bottom: 8px; }
+    .howto { color: #8b93a8; max-width: 920px; line-height: 1.55; margin-bottom: 20px; font-size: 14px; }
+    .howto strong { color: #fde68a; }
+    nav { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
+    nav a { color: #7c8cff; font-weight: 600; text-decoration: none; font-size: 13px; }
+    figure { margin: 0 0 48px; }
+    figcaption { font-size: 13px; color: #fde68a; margin-bottom: 10px; font-weight: 600; }
+    .board {
+      width: 1280px;
+      height: 800px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 48px;
+      background:
+        radial-gradient(700px 280px at 12% -20%, rgba(102,126,234,.35), transparent 55%),
+        #0c1020;
+    }
+    iframe {
+      border: 0;
+      border-radius: 16px;
+      box-shadow: 0 18px 48px rgba(0,0,0,.45);
+      background: #0c1020;
+    }
+    .side { width: 400px; height: 720px; }
+    .pop { width: 360px; height: 560px; }
+    .caption {
+      max-width: 360px;
+      color: #8b93a8;
+      font-size: 18px;
+      line-height: 1.5;
+    }
+    .caption b { color: #e8ecf5; display: block; font-size: 26px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>真实插件界面（本地网页）</h1>
+  <p class="howto">
+    样式直接引用插件的 CSS，布局和用词与工作台 / 弹窗一致。缩放 <strong>100%</strong>，只截 1280×800 底板。
+    英文版线路显示 <strong>Custom</strong>，中文版显示「自定义」。
+    也可单独打开
+    <a href="workbench.html?lang=en&view=account">工作台英文</a> /
+    <a href="workbench.html?lang=zh&view=account">工作台中文</a> /
+    <a href="popup.html?lang=en">弹窗英文</a> 再自行裁切。
+  </p>
+  <nav>
+    <a href="#p1">弹窗</a>
+    <a href="#p2">工作台 · 已购线路</a>
+    <a href="#p3">工作台 · 代理地址</a>
+    <a href="#p4">工作台 · 高级</a>
+  </nav>
+
+  <figure id="p1">
+    <figcaption>1280 × 800 · 弹窗（英文）</figcaption>
+    <div class="board">
+      <div class="caption"><b>Toolbar popup</b>Test, then set as this browser’s proxy.</div>
+      <iframe class="pop" src="popup.html?lang=en" title="popup en"></iframe>
+    </div>
+  </figure>
+
+  <figure id="p2">
+    <figcaption>1280 × 800 · 工作台 JoyProxy 静态线路（英文，对应你截到的那一屏）</figcaption>
+    <div class="board">
+      <div class="caption"><b>Workbench · JoyProxy</b>Custom / static lines after sign-in.</div>
+      <iframe class="side" src="workbench.html?lang=en&view=account" title="workbench account"></iframe>
+    </div>
+  </figure>
+
+  <figure id="p3">
+    <figcaption>1280 × 800 · 工作台 代理地址（英文）</figcaption>
+    <div class="board">
+      <div class="caption"><b>Workbench · Address</b>Paste host:port, test, then apply.</div>
+      <iframe class="side" src="workbench.html?lang=en&view=own" title="workbench address"></iframe>
+    </div>
+  </figure>
+
+  <figure id="p4">
+    <figcaption>1280 × 800 · 工作台 高级（英文）</figcaption>
+    <div class="board">
+      <div class="caption"><b>Workbench · Advanced</b>Scope, User-Agent, WebRTC, cookies.</div>
+      <iframe class="side" src="workbench.html?lang=en&view=tools" title="workbench advanced"></iframe>
+    </div>
+  </figure>
+</body>
+</html>
