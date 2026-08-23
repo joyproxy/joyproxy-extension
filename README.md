@@ -144,114 +144,116 @@ MIT License © 2026 JoyProxy
 
 ## 中文
 
-**JoyProxy 浏览器扩展** 是面向 Chromium 的 Manifest V3 代理工作台。可粘贴自有 `host:port`、接入第三方提取 API，或登录 JoyProxy 账号：先测通，再把可用代理应用到**当前浏览器**。账号是加速器，不是门票——不登录也能测通、设为代理，且这条路径不消耗 JoyProxy IP 流量。
+**JoyProxy 浏览器扩展** 用来在 Chrome 里测代理、切代理。自己的 `host:port`、第三方提取 API、JoyProxy 已买的线路，都可以先测通，再应用到**当前这个浏览器**（不会改电脑的系统代理）。
+
+账号是加速器，不是门票：不登录也能用自己的代理；登录后才能用 JoyProxy 套餐。不登录时，不会消耗 JoyProxy 的 IP 流量。
 
 - **官方网站：** https://www.joyproxy.com
 - **开源仓库：** https://github.com/joyproxy/joyproxy-extension
-- **相关工具：** [Tester](https://github.com/joyproxy/joyproxy-tester) · [Android 客户端](https://github.com/joyproxy/joyproxy-client-android) · [代理网关](https://github.com/joyproxy/joyproxy-server)
+- **相关工具：** [测通工具](https://github.com/joyproxy/joyproxy-tester) · [Android 客户端](https://github.com/joyproxy/joyproxy-client-android) · [代理服务端](https://github.com/joyproxy/joyproxy-server)
 
 ---
 
 ### 核心功能
 
-1. **自有代理**
-   - 解析 `host:port`、`user:pass@host:port` 以及 `http://` / `socks5://` 链接。
-   - 先测试（出口 IP、国家、延迟）。测试失败**不会**改浏览器代理。
-   - 测通后再设为代理；一键恢复直连或接管前的设置。
-   - 多档案保存与批量导入。
+1. **自己的代理**：
+   - 支持 `host:port`、`user:pass@host:port`，以及 `http://` / `socks5://` 链接。
+   - 先测出口 IP、国家和地区、延迟。测失败**不会**改浏览器正在用的代理。
+   - 测通后再点「设为代理」；可以一键恢复直连，或回到设代理之前的设置。
+   - 常用地址可以保存下来，也支持一次粘贴多条导入。
 
-2. **提取 API**
-   - 请求供应商提取地址，可用正则取出节点并逐条测试。
-   - **仅测试**，或 **测通后设为浏览器代理**。
-   - 可选定时轮换；停止「已设为代理」的会话时恢复直连。
+2. **提取 API**：
+   - 填供应商的提取地址，可用正则把返回内容里的节点抠出来，再一条条测。
+   - 两种模式：**只测不切**，或 **测通后自动设为浏览器代理**。
+   - 可以按间隔自动换一条。停掉之后，会把浏览器代理恢复回去。
 
-3. **JoyProxy 账号**
-   - 打开 JoyProxy 栏时，自动检测本浏览器是否已在 [www.joyproxy.com](https://www.joyproxy.com) 登录；已登录则直接加载已购产品。
-   - 动态（轮换）与静态（含自定义端口）：测通后再设为浏览器代理。
-   - **管理** 打开用户后台；**退出** 只退出扩展，不会退出网站。
+3. **JoyProxy 账号**：
+   - 打开「JoyProxy」这一栏时，会先看这个浏览器有没有已经登录 [www.joyproxy.com](https://www.joyproxy.com)。登录过就直接带出已买的产品，不用再点一次登录。
+   - 动态、静态（含自定义端口）都可以测通后再设为浏览器代理。
+   - 「管理」打开用户后台。「退出」只退出插件，网站那边还是登录着的。
 
-4. **工作台与弹窗**
-   - 工具栏弹窗：状态、地址栏、可选 JoyProxy 快捷选用。
-   - 侧栏工作台：自有代理、API、JoyProxy 产品、运行日志、隐私/清理、系统设置。
-   - 界面语言：简体中文、繁体中文、英语；主题：浅色 / 深色 / 跟随系统。
+4. **弹窗和工作台**：
+   - 点工具栏图标是小弹窗：看当前状态、粘贴代理；登录后也可以快速选一条 JoyProxy 线路。
+   - 弹窗里「打开工作台」是完整界面：自己的代理、API、JoyProxy 产品、日志、隐私工具和系统设置。
+   - 界面支持简体中文、繁体中文、英语；外观可浅色、深色，或跟随系统。
 
-5. **卫生与隐私（可选）**
-   - Bypass 名单（已预填 JoyProxy 站点与 API）。
-   - 公共 IP + Geo 通道（`ipinfo.io`、`ipwhois.app`、`ip-api.com`、`api.myip.com` 或自定义 URL），不消耗 JoyProxy 流量。
-   - 连接成功后可选限制 WebRTC。
-   - 工作台可改 User-Agent / 语言 / 时区，清理站点 Cookie 或缓存。
+5. **可选设置**：
+   - 不走代理的域名列表（已预填 JoyProxy 官网和 API）。
+   - 查出口 IP 用公共接口（`ipinfo.io`、`ipwhois.app`、`ip-api.com`、`api.myip.com`，也可以自己填 URL），不走 JoyProxy 流量。
+   - 连上代理后，可以选择限制 WebRTC，减少真实 IP 泄露。
+   - 工作台里可以改 User-Agent、语言、时区，也可以清某个网站的 Cookie 或缓存。
 
 ---
 
-### 安装（加载已解压扩展）
+### 安装（加载未打包扩展）
 
-适用于 Chrome、Edge、Brave、Opera、Vivaldi 等 Chromium 浏览器（**Chrome 114+**）。目前未上架商店，请直接加载源码目录。
+支持 Chrome、Edge、Brave、Opera、Vivaldi 等 Chromium 内核浏览器（**Chrome 114 及以上**）。目前还没上 Chrome 应用商店，请用源码目录直接加载。
 
-1. 克隆仓库：
+1. 克隆代码：
    ```bash
    git clone https://github.com/joyproxy/joyproxy-extension.git
    cd joyproxy-extension
    ```
 2. 打开 `chrome://extensions`。
 3. 打开右上角 **开发者模式**。
-4. 点击 **加载已解压的扩展程序**，选择仓库根目录（含 `manifest.json` 的文件夹）。
-5. 将 JoyProxy 固定到工具栏。点击图标打开弹窗，或从弹窗进入工作台。
+4. 点 **加载已解压的扩展程序**，选这个仓库的根目录（能看到 `manifest.json` 的那一层）。
+5. 把 JoyProxy 固定到工具栏。点图标打开弹窗；完整功能从弹窗进工作台。
 
-拉取更新后，在扩展卡片上点 **重新加载**。
+以后 `git pull` 更新了代码，到扩展管理页点一下 **重新加载**。
 
 ---
 
 ### 快速上手
 
-**自有代理**
+**自己的代理**
 
-1. 在弹窗或「代理地址」栏粘贴地址。
-2. 点 **测试**，确认出口 IP 与国家。
-3. 点 **设为代理**。返回直连时使用恢复直连。
+1. 在弹窗或工作台的「代理地址」里粘贴地址。
+2. 点 **测试**，看出口 IP 和国家对不对。
+3. 没问题再点 **设为代理**。要还原就点 **恢复直连**。
 
 **提取 API**
 
 1. 打开工作台 → **API**。
-2. 填写提取 URL（需要时加正则）。
-3. 选择 **仅测试** 或 **测通后设为代理**，然后开始。
+2. 填提取地址，需要的话再填正则。
+3. 选 **仅测试** 或 **测通后设为代理**，然后开始。
 
 **JoyProxy 产品**
 
-1. 在 [https://www.joyproxy.com](https://www.joyproxy.com) 登录（邮箱、Google 或 GitHub）。
-2. 打开工作台 → **JoyProxy**。若本浏览器已登录，产品会自动加载。
-3. 选择线路，**测试** 通过后再 **设为代理**。**管理** 打开 [用户后台](https://www.joyproxy.com/admin-overview.html)。
+1. 先在 [https://www.joyproxy.com](https://www.joyproxy.com) 登录（邮箱、Google、GitHub 都可以）。
+2. 打开工作台 → **JoyProxy**。这个浏览器已经登录过，产品会自动出来。
+3. 选线路，**测试** 通过后再 **设为代理**。点 **管理** 会打开 [用户后台](https://www.joyproxy.com/admin-overview.html)。
 
-购买流量与独立线路请前往 [官网](https://www.joyproxy.com)。
+买流量、买独享线路，请到 [官网](https://www.joyproxy.com)。
 
 ---
 
-### 权限与隐私
+### 权限和隐私
 
-扩展只改**当前浏览器**的代理（`chrome.proxy`），**不写** Windows / macOS 系统代理（需要系统代理请用 [JoyProxy Tester](https://github.com/joyproxy/joyproxy-tester)）。
+插件只改**当前浏览器**的代理，**不会**去改 Windows / macOS 的系统代理。如果需要改系统代理，请用桌面版 [JoyProxy Tester](https://github.com/joyproxy/joyproxy-tester)。
 
-| 权限 | 用途 |
-|------|------|
+| 权限 | 用来做什么 |
+|------|------------|
 | `proxy` | 设置或恢复浏览器代理 |
-| `storage` | 保存档案、设置与本地登录态 |
-| `sidePanel` | 工作台 |
-| `contextMenus` | 右键「用当前代理测试此站」 |
-| `webRequest` / `webRequestAuthProvider` | 为 HTTP 代理填写账密 |
-| `tabs` / `scripting` | 打开登录页或后台；读取网站登录态 |
-| `privacy` | 可选限制 WebRTC |
-| `webNavigation` / `declarativeNetRequest` | 可选请求头 / UA 覆盖 |
-| `browsingData` | 工作台清理 Cookie 或缓存 |
-| 主机权限 `<all_urls>` | 让任意网站走代理，并运行可选页面脚本 |
+| `storage` | 把保存的代理、设置、登录信息存在本机 |
+| `sidePanel` | 打开工作台 |
+| `contextMenus` | 网页上右键「用当前代理测试此站」 |
+| `webRequest` / `webRequestAuthProvider` | HTTP 代理需要用户名密码时自动带上 |
+| `tabs` / `scripting` | 打开登录页、后台；读取官网是否已登录 |
+| `privacy` | 可选：限制 WebRTC |
+| `webNavigation` / `declarativeNetRequest` | 可选：改请求头、User-Agent |
+| `browsingData` | 工作台里清理 Cookie、缓存 |
+| 访问所有网站 `<all_urls>` | 浏览才能走代理；隐私相关功能也需要 |
 
-登录令牌与代理账密只存在本机扩展存储。不含统计 SDK。测通会请求你配置的 Geo 通道（默认 `ipinfo.io`）。登录只访问 `www.joyproxy.com` 与 `api.joyproxy.com`。
+登录信息和代理账密只存在这台电脑的扩展存储里，不会做用户统计。测通时会访问你选的 IP 查询接口（默认 `ipinfo.io`）。登录只访问 `www.joyproxy.com` 和 `api.joyproxy.com`。
 
 ---
 
-### 限制
+### 目前做不到的
 
-- **仅 Chromium**，不支持 Firefox。
-- **SOCKS5 账密：** Chrome 无法为 SOCKS5 携带用户名密码。请改用 HTTP，或在 SOCKS 服务端把本机出口 IP 加入白名单。
-- **不是商城。** 购买、工单、OpenAPI、MCP、采集工作台仍在 [www.joyproxy.com](https://www.joyproxy.com)。
-- 测试失败不会覆盖当前正在使用的浏览器代理。
+- 只支持 Chromium 内核，**不支持 Firefox**。
+- Chrome 没法给 SOCKS5 带用户名密码。有账密请用 HTTP，或者让对方把你的出口 IP 加白名单。
+- 买套餐、提工单、调 OpenAPI / MCP、做网页采集，都在 [www.joyproxy.com](https://www.joyproxy.com)，插件里不做这些。
+- 测试失败时，不会把正在用的浏览器代理换掉。
 
 ---
 
@@ -259,9 +261,9 @@ MIT License © 2026 JoyProxy
 
 | 项目 | 说明 |
 |------|------|
-| [joyproxy-tester](https://github.com/joyproxy/joyproxy-tester) | 桌面测通工具（HTTP / SOCKS5 TCP / SOCKS5 UDP，可写 Windows 系统代理） |
-| [joyproxy-client-android](https://github.com/joyproxy/joyproxy-client-android) | Android HTTP / SOCKS5 客户端 |
-| [joyproxy-server](https://github.com/joyproxy/joyproxy-server) | Linux / Windows 高性能 HTTP / SOCKS5 网关 |
+| [joyproxy-tester](https://github.com/joyproxy/joyproxy-tester) | 桌面测通工具，支持 HTTP、SOCKS5 TCP / UDP，还可以同步 Windows 系统代理 |
+| [joyproxy-client-android](https://github.com/joyproxy/joyproxy-client-android) | Android 上的 HTTP / SOCKS5 客户端 |
+| [joyproxy-server](https://github.com/joyproxy/joyproxy-server) | Linux / Windows 上的高性能 HTTP / SOCKS5 网关 |
 
 ---
 
@@ -275,114 +277,116 @@ MIT License © 2026 JoyProxy
 
 ## 繁體中文
 
-**JoyProxy 瀏覽器擴充功能** 是面向 Chromium 的 Manifest V3 代理工作臺。可貼上自有 `host:port`、接入第三方提取 API，或登入 JoyProxy 帳號：先測通，再把可用代理套用到**目前瀏覽器**。帳號是加速器，不是門票——未登入也能測通、設為代理，且這條路徑不消耗 JoyProxy IP 流量。
+**JoyProxy 瀏覽器擴充功能** 用來在 Chrome 裡測代理、切代理。自己的 `host:port`、第三方提取 API、JoyProxy 已買的線路，都可以先測通，再套用到**目前這個瀏覽器**（不會改電腦的系統代理）。
+
+帳號是加速器，不是門票：沒登入也能用自己的代理；登入後才能用 JoyProxy 方案。沒登入時，不會消耗 JoyProxy 的 IP 流量。
 
 - **官方網站：** https://www.joyproxy.com
 - **開源倉庫：** https://github.com/joyproxy/joyproxy-extension
-- **相關工具：** [Tester](https://github.com/joyproxy/joyproxy-tester) · [Android 客戶端](https://github.com/joyproxy/joyproxy-client-android) · [代理閘道](https://github.com/joyproxy/joyproxy-server)
+- **相關工具：** [測通工具](https://github.com/joyproxy/joyproxy-tester) · [Android 用戶端](https://github.com/joyproxy/joyproxy-client-android) · [代理伺服器](https://github.com/joyproxy/joyproxy-server)
 
 ---
 
 ### 核心功能
 
-1. **自有代理**
-   - 解析 `host:port`、`user:pass@host:port` 以及 `http://` / `socks5://` 連結。
-   - 先測試（出口 IP、國家、延遲）。測試失敗**不會**改瀏覽器代理。
-   - 測通後再設為代理；一鍵恢復直連或接管前的設定。
-   - 多檔案儲存與批次匯入。
+1. **自己的代理**：
+   - 支援 `host:port`、`user:pass@host:port`，以及 `http://` / `socks5://` 連結。
+   - 先測出口 IP、國家和地區、延遲。測失敗**不會**改瀏覽器正在用的代理。
+   - 測通後再點「設為代理」；可以一鍵恢復直連，或回到設代理之前的設定。
+   - 常用地址可以存下來，也支援一次貼上多筆匯入。
 
-2. **提取 API**
-   - 請求供應商提取網址，可用正規表示式取出節點並逐條測試。
-   - **僅測試**，或 **測通後設為瀏覽器代理**。
-   - 可選定時輪換；停止「已設為代理」的工作階段時恢復直連。
+2. **提取 API**：
+   - 填供應商的提取網址，可用正規表示式把回傳內容裡的節點抓出來，再一條條測。
+   - 兩種模式：**只測不切**，或 **測通後自動設為瀏覽器代理**。
+   - 可以依間隔自動換一條。停掉之後，會把瀏覽器代理恢復回去。
 
-3. **JoyProxy 帳號**
-   - 開啟 JoyProxy 欄時，自動偵測本瀏覽器是否已在 [www.joyproxy.com](https://www.joyproxy.com) 登入；已登入則直接載入已購產品。
-   - 動態（輪換）與靜態（含自訂連接埠）：測通後再設為瀏覽器代理。
-   - **管理** 開啟使用者後台；**登出** 只登出擴充功能，不會登出網站。
+3. **JoyProxy 帳號**：
+   - 打開「JoyProxy」這一欄時，會先看這個瀏覽器有沒有已經登入 [www.joyproxy.com](https://www.joyproxy.com)。登入過就直接帶出已買的產品，不用再點一次登入。
+   - 動態、靜態（含自訂連接埠）都可以測通後再設為瀏覽器代理。
+   - 「管理」打開用戶後台。「登出」只登出擴充功能，網站那邊還是登入著的。
 
-4. **工作臺與彈窗**
-   - 工具列彈窗：狀態、地址欄、可選 JoyProxy 快捷選用。
-   - 側欄工作臺：自有代理、API、JoyProxy 產品、執行日誌、隱私/清理、系統設定。
-   - 介面語言：簡體中文、繁體中文、英語；主題：淺色 / 深色 / 跟隨系統。
+4. **彈窗和工作台**：
+   - 點工具列圖示是小彈窗：看目前狀態、貼上代理；登入後也可以快速選一條 JoyProxy 線路。
+   - 彈窗裡「打開工作台」是完整介面：自己的代理、API、JoyProxy 產品、日誌、隱私工具和系統設定。
+   - 介面支援簡體中文、繁體中文、英語；外觀可淺色、深色，或跟隨系統。
 
-5. **衛生與隱私（可選）**
-   - Bypass 名單（已預填 JoyProxy 站點與 API）。
-   - 公共 IP + Geo 通道（`ipinfo.io`、`ipwhois.app`、`ip-api.com`、`api.myip.com` 或自訂 URL），不消耗 JoyProxy 流量。
-   - 連線成功後可選限制 WebRTC。
-   - 工作臺可改 User-Agent / 語言 / 時區，清理網站 Cookie 或快取。
+5. **可選設定**：
+   - 不走代理的網域清單（已預填 JoyProxy 官網和 API）。
+   - 查出 IP 用公共介面（`ipinfo.io`、`ipwhois.app`、`ip-api.com`、`api.myip.com`，也可以自己填 URL），不走 JoyProxy 流量。
+   - 連上代理後，可以選擇限制 WebRTC，減少真實 IP 外洩。
+   - 工作台裡可以改 User-Agent、語言、時區，也可以清某個網站的 Cookie 或快取。
 
 ---
 
-### 安裝（載入已解壓縮的擴充功能）
+### 安裝（載入未封裝擴充功能）
 
-適用於 Chrome、Edge、Brave、Opera、Vivaldi 等 Chromium 瀏覽器（**Chrome 114+**）。目前未上架商店，請直接載入原始碼目錄。
+支援 Chrome、Edge、Brave、Opera、Vivaldi 等 Chromium 核心瀏覽器（**Chrome 114 以上**）。目前還沒上架 Chrome 線上應用程式商店，請用原始碼目錄直接載入。
 
-1. 複製倉庫：
+1. 複製程式碼：
    ```bash
    git clone https://github.com/joyproxy/joyproxy-extension.git
    cd joyproxy-extension
    ```
-2. 開啟 `chrome://extensions`。
-3. 開啟右上角 **開發人員模式**。
-4. 點擊 **載入未封裝項目**，選擇倉庫根目錄（含 `manifest.json` 的資料夾）。
-5. 將 JoyProxy 固定到工具列。點擊圖示開啟彈窗，或從彈窗進入工作臺。
+2. 打開 `chrome://extensions`。
+3. 打開右上角 **開發人員模式**。
+4. 點 **載入未封裝項目**，選這個倉庫的根目錄（看得到 `manifest.json` 的那一層）。
+5. 把 JoyProxy 固定到工具列。點圖示打開彈窗；完整功能從彈窗進工作台。
 
-拉取更新後，在擴充功能卡片上點 **重新載入**。
+之後 `git pull` 更新了程式碼，到擴充功能管理頁點一下 **重新載入**。
 
 ---
 
 ### 快速上手
 
-**自有代理**
+**自己的代理**
 
-1. 在彈窗或「代理地址」欄貼上地址。
-2. 點 **測試**，確認出口 IP 與國家。
-3. 點 **設為代理**。返回直連時使用恢復直連。
+1. 在彈窗或工作台的「代理地址」裡貼上地址。
+2. 點 **測試**，看出口 IP 和國家對不對。
+3. 沒問題再點 **設為代理**。要還原就點 **恢復直連**。
 
 **提取 API**
 
-1. 開啟工作臺 → **API**。
-2. 填寫提取 URL（需要時加正規表示式）。
-3. 選擇 **僅測試** 或 **測通後設為代理**，然後開始。
+1. 打開工作台 → **API**。
+2. 填提取網址，需要的話再填正規表示式。
+3. 選 **僅測試** 或 **測通後設為代理**，然後開始。
 
 **JoyProxy 產品**
 
-1. 在 [https://www.joyproxy.com](https://www.joyproxy.com) 登入（電子郵件、Google 或 GitHub）。
-2. 開啟工作臺 → **JoyProxy**。若本瀏覽器已登入，產品會自動載入。
-3. 選擇線路，**測試** 通過後再 **設為代理**。**管理** 開啟 [使用者後台](https://www.joyproxy.com/admin-overview.html)。
+1. 先在 [https://www.joyproxy.com](https://www.joyproxy.com) 登入（信箱、Google、GitHub 都可以）。
+2. 打開工作台 → **JoyProxy**。這個瀏覽器已經登入過，產品會自動出來。
+3. 選線路，**測試** 通過後再 **設為代理**。點 **管理** 會打開 [用戶後台](https://www.joyproxy.com/admin-overview.html)。
 
-購買流量與獨立線路請前往 [官網](https://www.joyproxy.com)。
+買流量、買獨享線路，請到 [官網](https://www.joyproxy.com)。
 
 ---
 
-### 權限與隱私
+### 權限和隱私
 
-擴充功能只改**目前瀏覽器**的代理（`chrome.proxy`），**不寫** Windows / macOS 系統代理（需要系統代理請用 [JoyProxy Tester](https://github.com/joyproxy/joyproxy-tester)）。
+擴充功能只改**目前瀏覽器**的代理，**不會**去改 Windows / macOS 的系統代理。如果需要改系統代理，請用桌面版 [JoyProxy Tester](https://github.com/joyproxy/joyproxy-tester)。
 
-| 權限 | 用途 |
-|------|------|
+| 權限 | 用來做什麼 |
+|------|------------|
 | `proxy` | 設定或恢復瀏覽器代理 |
-| `storage` | 儲存檔案、設定與本機登入狀態 |
-| `sidePanel` | 工作臺 |
-| `contextMenus` | 右鍵「用目前代理測試此站」 |
-| `webRequest` / `webRequestAuthProvider` | 為 HTTP 代理填寫帳密 |
-| `tabs` / `scripting` | 開啟登入頁或後台；讀取網站登入狀態 |
-| `privacy` | 可選限制 WebRTC |
-| `webNavigation` / `declarativeNetRequest` | 可選請求頭 / UA 覆蓋 |
-| `browsingData` | 工作臺清理 Cookie 或快取 |
-| 主機權限 `<all_urls>` | 讓任意網站走代理，並執行可選頁面指令碼 |
+| `storage` | 把儲存的代理、設定、登入資訊存在本機 |
+| `sidePanel` | 打開工作台 |
+| `contextMenus` | 網頁上按右鍵「用目前代理測試此站」 |
+| `webRequest` / `webRequestAuthProvider` | HTTP 代理需要帳號密碼時自動帶上 |
+| `tabs` / `scripting` | 打開登入頁、後台；讀取官網是否已登入 |
+| `privacy` | 可選：限制 WebRTC |
+| `webNavigation` / `declarativeNetRequest` | 可選：改請求標頭、User-Agent |
+| `browsingData` | 工作台裡清理 Cookie、快取 |
+| 存取所有網站 `<all_urls>` | 瀏覽才能走代理；隱私相關功能也需要 |
 
-登入權杖與代理帳密只存在本機擴充功能儲存空間。不含統計 SDK。測通會請求你設定的 Geo 通道（預設 `ipinfo.io`）。登入只存取 `www.joyproxy.com` 與 `api.joyproxy.com`。
+登入資訊和代理帳密只存在這台電腦的擴充功能儲存空間，不會做使用者統計。測通時會存取你選的 IP 查詢介面（預設 `ipinfo.io`）。登入只會連到 `www.joyproxy.com` 和 `api.joyproxy.com`。
 
 ---
 
-### 限制
+### 目前做不到的
 
-- **僅 Chromium**，不支援 Firefox。
-- **SOCKS5 帳密：** Chrome 無法為 SOCKS5 攜帶使用者名稱與密碼。請改用 HTTP，或在 SOCKS 伺服器把本機出口 IP 加入白名單。
-- **不是商城。** 購買、工單、OpenAPI、MCP、採集工作臺仍在 [www.joyproxy.com](https://www.joyproxy.com)。
-- 測試失敗不會覆蓋目前正在使用的瀏覽器代理。
+- 只支援 Chromium 核心，**不支援 Firefox**。
+- Chrome 沒辦法幫 SOCKS5 帶帳號密碼。有帳密請用 HTTP，或請對方把你的出口 IP 加入白名單。
+- 買方案、開工單、呼叫 OpenAPI / MCP、做網頁擷取，都在 [www.joyproxy.com](https://www.joyproxy.com)，擴充功能裡不做這些。
+- 測試失敗時，不會把正在用的瀏覽器代理換掉。
 
 ---
 
@@ -390,9 +394,9 @@ MIT License © 2026 JoyProxy
 
 | 專案 | 說明 |
 |------|------|
-| [joyproxy-tester](https://github.com/joyproxy/joyproxy-tester) | 桌面測通工具（HTTP / SOCKS5 TCP / SOCKS5 UDP，可寫 Windows 系統代理） |
-| [joyproxy-client-android](https://github.com/joyproxy/joyproxy-client-android) | Android HTTP / SOCKS5 客戶端 |
-| [joyproxy-server](https://github.com/joyproxy/joyproxy-server) | Linux / Windows 高效能 HTTP / SOCKS5 閘道 |
+| [joyproxy-tester](https://github.com/joyproxy/joyproxy-tester) | 桌面測通工具，支援 HTTP、SOCKS5 TCP / UDP，還可以同步 Windows 系統代理 |
+| [joyproxy-client-android](https://github.com/joyproxy/joyproxy-client-android) | Android 上的 HTTP / SOCKS5 用戶端 |
+| [joyproxy-server](https://github.com/joyproxy/joyproxy-server) | Linux / Windows 上的高效能 HTTP / SOCKS5 閘道 |
 
 ---
 
