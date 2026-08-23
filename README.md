@@ -13,7 +13,9 @@
 
 ## English
 
-**JoyProxy Extension** is a Chromium (Manifest V3) browser proxy workbench. Paste your own `host:port`, wire a third-party extract API, or sign in with a JoyProxy account to test endpoints and apply a working proxy to **this browser only**. A JoyProxy account is an accelerator, not a gate: you can test and connect without logging in, and that path uses none of JoyProxy’s IP traffic.
+**JoyProxy Extension** is a Chromium (Manifest V3) browser proxy workbench. Paste your own `host:port`, use a third-party extract API, or sign in to use lines you bought on JoyProxy — test first, then apply a working proxy to **this browser only** (it does not change the computer’s system proxy).
+
+You can test and apply **your own** proxies without a JoyProxy account. Sign in only when you want to use products purchased on the website. Using your own proxy does not consume JoyProxy traffic.
 
 - **Official website:** https://www.joyproxy.com
 - **Repository:** https://github.com/joyproxy/joyproxy-extension
@@ -40,15 +42,20 @@
    - **Manage** opens the account dashboard. **Sign out** only signs the extension out; it does not sign you out of the website.
 
 4. **Workbench and popup**
-   - Toolbar popup: status, composer, optional JoyProxy quick pick.
-   - Side-panel workbench: own proxies, APIs, JoyProxy products, run log, privacy / cleanup tools, and settings.
-   - UI language: simplified Chinese, traditional Chinese, English. Theme: light / dark / auto.
+   - Toolbar popup: current status, paste a proxy; after sign-in, a quick JoyProxy line picker.
+   - **Open workbench** for the full UI: own proxies, APIs, JoyProxy products, run log, **Advanced**, and **System**.
+   - UI language: Simplified Chinese, Traditional Chinese, English. Theme: light / dark / follow the browser.
 
-5. **Hygiene and privacy (optional)**
-   - Bypass list (JoyProxy site and API are prefilled).
-   - Public IP + geo channels (`ipinfo.io`, `ipwhois.app`, `ip-api.com`, `api.myip.com`, or a custom URL). These checks do not consume JoyProxy traffic.
-   - Optional WebRTC IP restriction after connect.
-   - Workbench tools: User-Agent / language / timezone overrides, clear site cookies or cache.
+5. **Advanced** (workbench → **Advanced**)
+   - **Proxy scope:** send all traffic through the proxy (except a bypass list), or only the domains / IPs / URLs you list. The bypass list is prefilled with JoyProxy’s site and API.
+   - **Common:** User-Agent (presets or a custom string), restrict WebRTC to reduce real-IP leaks, clear cookies or all data for the current site.
+   - **More:** language, timezone, screen size, device pixel ratio, CPU cores, device memory, touch points, WebGL renderer, fonts, light canvas noise, strip Referer, send Do Not Track.
+   - Most of the above can be set to **randomize each time you apply a proxy**.
+   - Also: clear all cookies, or clear the browser cache without deleting cookies.
+
+6. **System**
+   - Language and theme for the extension UI.
+   - IP + geo channel used when testing (`ipinfo.io`, `ipwhois.app`, `ip-api.com`, `api.myip.com`, or a custom URL). These checks do not consume JoyProxy traffic.
 
 ---
 
@@ -146,7 +153,7 @@ MIT License © 2026 JoyProxy
 
 **JoyProxy 浏览器扩展** 用来在 Chrome 里测代理、切代理。自己的 `host:port`、第三方提取 API、JoyProxy 已买的线路，都可以先测通，再应用到**当前这个浏览器**（不会改电脑的系统代理）。
 
-账号是加速器，不是门票：不登录也能用自己的代理；登录后才能用 JoyProxy 套餐。不登录时，不会消耗 JoyProxy 的 IP 流量。
+不登录也能测、也能把你自己的代理设到浏览器里。只有要用官网上买的线路时，才需要登录。用自己的代理，不会扣 JoyProxy 的流量。
 
 - **官方网站：** https://www.joyproxy.com
 - **开源仓库：** https://github.com/joyproxy/joyproxy-extension
@@ -174,14 +181,19 @@ MIT License © 2026 JoyProxy
 
 4. **弹窗和工作台**：
    - 点工具栏图标是小弹窗：看当前状态、粘贴代理；登录后也可以快速选一条 JoyProxy 线路。
-   - 弹窗里「打开工作台」是完整界面：自己的代理、API、JoyProxy 产品、日志、隐私工具和系统设置。
+   - 弹窗里「打开工作台」是完整界面：自己的代理、API、JoyProxy 产品、日志，以及底部的 **高级**、**系统**。
    - 界面支持简体中文、繁体中文、英语；外观可浅色、深色，或跟随系统。
 
-5. **可选设置**：
-   - 不走代理的域名列表（已预填 JoyProxy 官网和 API）。
-   - 查出口 IP 用公共接口（`ipinfo.io`、`ipwhois.app`、`ip-api.com`、`api.myip.com`，也可以自己填 URL），不走 JoyProxy 流量。
-   - 连上代理后，可以选择限制 WebRTC，减少真实 IP 泄露。
-   - 工作台里可以改 User-Agent、语言、时区，也可以清某个网站的 Cookie 或缓存。
+5. **高级**（工作台底部 → **高级**）：
+   - **代理范围：** 默认除名单外全部走代理；也可以改成「只有名单里的域名 / IP / 网址走代理，其余直连」。不走代理的名单已预填 JoyProxy 官网和 API。
+   - **常用：** 改 User-Agent（预设或自己填）、限制 WebRTC（减少真实 IP 泄露）、清理当前网站的 Cookie 或整站数据。
+   - **更多选项：** 语言、时区、屏幕分辨率、设备像素比、CPU 核心数、内存、触控点数、WebGL 显卡信息、字体列表、Canvas 轻微噪声、去掉 Referer、发送 Do Not Track。
+   - 上面多数项目都可以勾「每次设为代理时随机」，连上代理时换一套。
+   - 还可以清理浏览器里全部 Cookie，或只清缓存、不动登录。
+
+6. **系统**：
+   - 扩展自己的界面语言和外观。
+   - 测代理、看真实 IP 时用的查询接口（`ipinfo.io`、`ipwhois.app`、`ip-api.com`、`api.myip.com`，也可以自己填 URL），不走 JoyProxy 流量。
 
 ---
 
@@ -279,7 +291,7 @@ MIT License © 2026 JoyProxy
 
 **JoyProxy 瀏覽器擴充功能** 用來在 Chrome 裡測代理、切代理。自己的 `host:port`、第三方提取 API、JoyProxy 已買的線路，都可以先測通，再套用到**目前這個瀏覽器**（不會改電腦的系統代理）。
 
-帳號是加速器，不是門票：沒登入也能用自己的代理；登入後才能用 JoyProxy 方案。沒登入時，不會消耗 JoyProxy 的 IP 流量。
+沒登入也能測、也能把自己的代理設到瀏覽器裡。只有要用官網上買的線路時，才需要登入。用自己的代理，不會扣 JoyProxy 的流量。
 
 - **官方網站：** https://www.joyproxy.com
 - **開源倉庫：** https://github.com/joyproxy/joyproxy-extension
@@ -307,14 +319,19 @@ MIT License © 2026 JoyProxy
 
 4. **彈窗和工作台**：
    - 點工具列圖示是小彈窗：看目前狀態、貼上代理；登入後也可以快速選一條 JoyProxy 線路。
-   - 彈窗裡「打開工作台」是完整介面：自己的代理、API、JoyProxy 產品、日誌、隱私工具和系統設定。
+   - 彈窗裡「打開工作台」是完整介面：自己的代理、API、JoyProxy 產品、日誌，以及底部的 **進階**、**系統**。
    - 介面支援簡體中文、繁體中文、英語；外觀可淺色、深色，或跟隨系統。
 
-5. **可選設定**：
-   - 不走代理的網域清單（已預填 JoyProxy 官網和 API）。
-   - 查出 IP 用公共介面（`ipinfo.io`、`ipwhois.app`、`ip-api.com`、`api.myip.com`，也可以自己填 URL），不走 JoyProxy 流量。
-   - 連上代理後，可以選擇限制 WebRTC，減少真實 IP 外洩。
-   - 工作台裡可以改 User-Agent、語言、時區，也可以清某個網站的 Cookie 或快取。
+5. **進階**（工作台底部 → **進階**）：
+   - **代理範圍：** 預設除名單外全部走代理；也可以改成「只有名單裡的網域 / IP / 網址走代理，其餘直連」。不走代理的名單已預填 JoyProxy 官網和 API。
+   - **常用：** 改 User-Agent（預設或自己填）、限制 WebRTC（減少真實 IP 外洩）、清理目前網站的 Cookie 或整站資料。
+   - **更多選項：** 語言、時區、螢幕解析度、裝置像素比、CPU 核心數、記憶體、觸控點數、WebGL 顯示卡資訊、字體列表、Canvas 輕微雜訊、去掉 Referer、傳送 Do Not Track。
+   - 上面多數項目都可以勾「每次設為代理時隨機」，連上代理時換一套。
+   - 還可以清理瀏覽器裡全部 Cookie，或只清快取、不動登入。
+
+6. **系統**：
+   - 擴充功能自己的介面語言和外觀。
+   - 測代理、看真實 IP 時用的查詢介面（`ipinfo.io`、`ipwhois.app`、`ip-api.com`、`api.myip.com`，也可以自己填 URL），不走 JoyProxy 流量。
 
 ---
 
