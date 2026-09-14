@@ -67,9 +67,7 @@ You can test and apply **your own** proxies without a JoyProxy account. Sign in 
 
 ### Install
 
-Works on Chrome, Edge, Brave, Opera, Vivaldi, and other Chromium browsers (**Chrome 114+**).
-
-**Mainland China:** the Chrome Web Store is often blocked. Download the zip and load it in Developer mode.
+Works on Chrome, Edge, Brave, Opera, Vivaldi, and other Chromium browsers (**Chrome 114+**). Download the zip and load it in Developer mode:
 
 1. Download [joyproxy-extension-unpacked.zip](https://github.com/joyproxy/joyproxy-extension/releases/latest/download/joyproxy-extension-unpacked.zip) (GitHub Releases, latest).
 2. Unzip it.
@@ -213,9 +211,7 @@ MIT License © 2026 JoyProxy
 
 ### 安装
 
-支持 Chrome、Edge、Brave、Opera、Vivaldi 等 Chromium 内核浏览器（**Chrome 114 及以上**）。
-
-中国大陆访问不了 Chrome 应用商店时，请下载 zip，用开发者模式加载：
+支持 Chrome、Edge、Brave、Opera、Vivaldi 等 Chromium 内核浏览器（**Chrome 114 及以上**）。下载 zip，用开发者模式加载：
 
 1. 下载 [joyproxy-extension-unpacked.zip](https://github.com/joyproxy/joyproxy-extension/releases/latest/download/joyproxy-extension-unpacked.zip)（GitHub Releases 最新版）。
 2. 解压。
@@ -360,9 +356,7 @@ MIT License © 2026 JoyProxy
 
 ### 安裝
 
-支援 Chrome、Edge、Brave、Opera、Vivaldi 等 Chromium 核心瀏覽器（**Chrome 114 以上**）。
-
-中國大陸若無法開啟 Chrome 線上應用程式商店，請下載 zip，用開發人員模式載入：
+支援 Chrome、Edge、Brave、Opera、Vivaldi 等 Chromium 核心瀏覽器（**Chrome 114 以上**）。下載 zip，用開發人員模式載入：
 
 1. 下載 [joyproxy-extension-unpacked.zip](https://github.com/joyproxy/joyproxy-extension/releases/latest/download/joyproxy-extension-unpacked.zip)（GitHub Releases 最新版）。
 2. 解壓縮。
