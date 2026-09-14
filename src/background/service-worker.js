@@ -3,6 +3,7 @@ import * as actions from "../shared/actions.js";
 actions.initBackground();
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg?.type === "OFFSCREEN_FETCH") return;
   handle(msg, sender)
     .then((result) => sendResponse({ ok: true, result }))
     .catch((err) => sendResponse({ ok: false, error: err?.message || String(err) }));
@@ -42,13 +43,17 @@ async function handle(msg, sender) {
     case "STOP_JOYPROXY":
       return actions.stopJoyproxy();
     case "REFRESH_JOYPROXY":
-      return actions.refreshJoyproxyCatalog();
+      return actions.refreshJoyproxyCatalog({ force: true });
     case "REFRESH_REAL_IP":
       return actions.refreshRealIp();
     case "TEST":
       return actions.testProxy(msg.proxy);
     case "CONNECT":
-      return actions.connectProxy(msg.proxy, { fromExtract: msg.fromExtract, fromJoyproxy: msg.fromJoyproxy });
+      return actions.connectProxy(msg.proxy, {
+        fromExtract: msg.fromExtract,
+        fromJoyproxy: msg.fromJoyproxy,
+        skipTest: Boolean(msg.skipTest),
+      });
     case "DISCONNECT":
       return actions.disconnect();
     case "RETEST":

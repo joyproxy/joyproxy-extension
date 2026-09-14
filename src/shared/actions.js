@@ -1,4 +1,5 @@
-import { fetchGeo, countryCode, formatIpLine } from "./geo.js";
+import { fetchGeo, countryCode, formatIpLine, verifyAuthTunnel } from "./geo.js";
+import { ensureOffscreenDocument, fetchThroughOffscreen } from "./offscreen-fetch.js";
 import { extractHostPorts, parseProxyInput, shortProxy } from "./parse.js";
 import {
   loadState,
@@ -13,17 +14,26 @@ import {
   emptyCatalog,
   extractOneProxy,
   fetchGeoCountries,
+  fetchGeoCountryTree,
+  joySessionType,
+  liveCatalogLines,
   loadJoyproxyCatalog,
+  snapJoyDuration,
 } from "./joyproxy-api.js";
 import {
   applyBrowserProxy,
+  clearProxyConfig,
   getProxySettings,
+  hasHttpAuth,
   installAuthHandler,
   restoreProxy,
   setPendingAuth,
   testViaPac,
 } from "./proxy-settings.js";
+import { buildLocalProxyCommand, localRelayRequiredError, shouldUseLocalRelay } from "./local-relay.js";
+import { ensureLocalRelay } from "./native-relay.js";
 import { setActionAppearance } from "./icons.js";
+import { t } from "./i18n.js";
 import {
   applyHeaderOverrides,
   applyWebRtc,
@@ -36,6 +46,14 @@ import {
   installPrivacyInjection,
   resolveLivePrivacy,
 } from "./privacy.js";
+
+function logLine(state, key, params = {}, level = "info") {
+  if (typeof params === "string") {
+    level = params;
+    params = {};
+  }
+  pushLog(state, { key, params }, level);
+}
 
 function asProto(v) {
   return v === "socks5" ? "socks5" : "http";
@@ -108,43 +126,91 @@ export async function setSource(source) {
 
 export async function setJoyproxyPrefs(prefs) {
   const prev = await loadState();
+  const countryChanged =
+    prefs.countryGeoname !== undefined && prefs.countryGeoname !== prev.joyproxy?.countryGeoname;
+  const stateChanged = prefs.stateGeoname !== undefined && prefs.stateGeoname !== prev.joyproxy?.stateGeoname;
   const state = await patchState((s) => {
     s.joyproxy = { ...s.joyproxy, ...prefs };
+    s.joyproxy.sessionType = joySessionType(s.joyproxy.sessionType);
+    if (s.joyproxy.sessionType === "sticky") {
+      s.joyproxy.duration = snapJoyDuration(s.joyproxy.duration, "sticky") || "1m";
+    }
+    s.joyproxy.protocol = "http";
+    if (countryChanged) {
+      if (prefs.stateGeoname === undefined) s.joyproxy.stateGeoname = "";
+      if (prefs.cityGeoname === undefined) s.joyproxy.cityGeoname = "";
+    } else if (stateChanged && prefs.cityGeoname === undefined) {
+      s.joyproxy.cityGeoname = "";
+    }
     return s;
   });
   if (prefs.network && prefs.network !== prev.joyproxy?.network) {
     refreshJoyproxyGeo(prefs.network).catch(() => {});
+  } else if (countryChanged) {
+    refreshJoyproxyGeo().catch(() => {});
   }
   return decorate(state);
 }
 
 function pickCatalogDefaults(jp, catalog) {
-  const next = { ...jp, catalog };
+  const next = { ...jp, catalog: { ...catalog, lines: liveCatalogLines(catalog.lines) } };
+  catalog = next.catalog;
   if (next.kind === "dynamic" && !catalog.networks.length && catalog.lines.length) next.kind = "static";
   if (next.kind === "static" && !catalog.lines.length && catalog.networks.length) next.kind = "dynamic";
   if (catalog.networks.length && !catalog.networks.includes(next.network)) next.network = catalog.networks[0];
   if (catalog.lines.length && !catalog.lines.some((l) => l.id === next.selectedId)) next.selectedId = catalog.lines[0].id;
-  if (next.countryGeoname && !(catalog.countries || []).some((c) => c.id === next.countryGeoname)) {
+  if (!(catalog.countries || []).length && (jp.catalog?.countries || []).length) {
+    catalog.countries = jp.catalog.countries;
+    catalog.states = jp.catalog.states || [];
+    catalog.cities = jp.catalog.cities || {};
+    catalog.geoTreeCountry = jp.catalog.geoTreeCountry || "";
+  } else if (jp.catalog?.geoTreeCountry && jp.catalog.geoTreeCountry === next.countryGeoname) {
+    catalog.states = jp.catalog.states || [];
+    catalog.cities = jp.catalog.cities || {};
+    catalog.geoTreeCountry = jp.catalog.geoTreeCountry;
+  }
+  if ((catalog.countries || []).length && next.countryGeoname && !catalog.countries.some((c) => c.id === next.countryGeoname)) {
     next.countryGeoname = "";
+    next.stateGeoname = "";
+    next.cityGeoname = "";
+  }
+  if (next.stateGeoname && (catalog.geoTreeCountry || "") === next.countryGeoname) {
+    if (!(catalog.states || []).some((s) => s.id === next.stateGeoname)) {
+      next.stateGeoname = "";
+      next.cityGeoname = "";
+    }
   }
   return next;
 }
 
-export async function refreshJoyproxyCatalog() {
+let catalogRefreshAt = 0;
+
+export async function refreshJoyproxyCatalog(opts = {}) {
   const opened = await loadState();
   const jwt = opened.joyproxy?.token;
   if (!jwt) return decorate(opened);
+  if (
+    !opts.force &&
+    Date.now() - catalogRefreshAt < 2500 &&
+    opened.joyproxy?.catalog?.loaded &&
+    !opened.joyproxy?.catalogLoading
+  ) {
+    return decorate(opened);
+  }
+  catalogRefreshAt = Date.now();
   await patchState((s) => {
     s.joyproxy.catalogLoading = true;
     s.joyproxy.catalog = { ...(s.joyproxy.catalog || emptyCatalog()), error: "" };
     return s;
   });
   try {
-    const { catalog, extractToken, masterToken } = await loadJoyproxyCatalog(jwt);
+    const { catalog, extractToken, masterToken, proxyCredentials } = await loadJoyproxyCatalog(jwt);
     const next = await patchState((s) => {
       s.joyproxy.catalogLoading = false;
       s.joyproxy.extractToken = extractToken;
       s.joyproxy.masterToken = masterToken;
+      s.joyproxy.proxyUsername = proxyCredentials?.username || "";
+      s.joyproxy.proxyPassword = proxyCredentials?.password || "";
       s.joyproxy = pickCatalogDefaults(s.joyproxy, catalog);
       return s;
     });
@@ -154,23 +220,49 @@ export async function refreshJoyproxyCatalog() {
     const next = await patchState((s) => {
       s.joyproxy.catalogLoading = false;
       s.joyproxy.catalog = { ...emptyCatalog(), loaded: true, error: humanizeError(err) };
-      pushLog(s, `JoyProxy 产品列表失败：${humanizeError(err)}`, "error");
+      logLine(s, "log.catalogFail", errorParams(err), "error");
       return s;
     });
     return decorate(next);
   }
 }
 
-export async function refreshJoyproxyGeo(network) {
+export async function refreshJoyproxyGeo() {
   const opened = await loadState();
-  const token = opened.joyproxy?.extractToken;
-  if (!token) return decorate(opened);
-  const countries = await fetchGeoCountries(token, network || opened.joyproxy.network).catch(() => []);
+  let countries = await fetchGeoCountries().catch(() => []);
+  if (!countries.length) countries = opened.joyproxy?.catalog?.countries || [];
+  const wanted = opened.joyproxy?.countryGeoname || "";
+  const country = countries.find((c) => c.id === wanted) || null;
+  let tree = { countryId: "", states: [], cities: {} };
+  if (country) {
+    tree = await fetchGeoCountryTree(country).catch(() => tree);
+  }
   const next = await patchState((s) => {
-    s.joyproxy.catalog = { ...(s.joyproxy.catalog || emptyCatalog()), countries };
-    if (s.joyproxy.countryGeoname && !countries.some((c) => c.id === s.joyproxy.countryGeoname)) {
+    const catalog = { ...(s.joyproxy.catalog || emptyCatalog()) };
+    if (countries.length) catalog.countries = countries;
+    if (countries.length && s.joyproxy.countryGeoname && !countries.some((c) => c.id === s.joyproxy.countryGeoname)) {
       s.joyproxy.countryGeoname = "";
+      s.joyproxy.stateGeoname = "";
+      s.joyproxy.cityGeoname = "";
     }
+    if (s.joyproxy.countryGeoname && country && tree.countryId === country.id) {
+      catalog.states = tree.states;
+      catalog.cities = tree.cities;
+      catalog.geoTreeCountry = tree.countryId;
+      if (s.joyproxy.stateGeoname && !tree.states.some((st) => st.id === s.joyproxy.stateGeoname)) {
+        s.joyproxy.stateGeoname = "";
+        s.joyproxy.cityGeoname = "";
+      }
+    } else {
+      catalog.states = [];
+      catalog.cities = {};
+      catalog.geoTreeCountry = "";
+      if (!s.joyproxy.countryGeoname) {
+        s.joyproxy.stateGeoname = "";
+        s.joyproxy.cityGeoname = "";
+      }
+    }
+    s.joyproxy.catalog = catalog;
     return s;
   });
   return decorate(next);
@@ -180,11 +272,11 @@ export async function stopOtherRotators(keep) {
   const state = await patchState((s) => {
     if (keep !== "extract" && s.extract.running) {
       s.extract.running = false;
-      pushLog(s, "已停止 API 测试（改为其他更换方式）");
+      logLine(s, "log.stopExtractSwitch");
     }
     if (keep !== "joyproxy" && s.joyproxy?.running) {
       s.joyproxy.running = false;
-      pushLog(s, "已停止 JoyProxy 定时更换");
+      logLine(s, "log.stopJoySwitch");
     }
     return s;
   });
@@ -219,10 +311,16 @@ export async function applySiteSession(raw, opts = {}) {
     cur.joyproxy.token === session.token &&
     (!session.email || session.email === cur.joyproxy.email)
   ) {
-    if (!cur.joyproxy.catalog?.loaded && !cur.joyproxy.catalogLoading) {
+    if (session.email && session.email !== cur.joyproxy.email) {
+      await patchState((s) => {
+        s.joyproxy.email = session.email;
+        return s;
+      });
+    }
+    if (!cur.joyproxy.catalogLoading) {
       refreshJoyproxyCatalog().catch(() => {});
     }
-    return decorate(cur);
+    return decorate(await loadState());
   }
 
   const state = await patchState((s) => {
@@ -237,10 +335,12 @@ export async function applySiteSession(raw, opts = {}) {
         s.joyproxy.token = "";
         s.joyproxy.extractToken = "";
         s.joyproxy.masterToken = "";
+        s.joyproxy.proxyUsername = "";
+        s.joyproxy.proxyPassword = "";
         s.joyproxy.catalogLoading = false;
         s.joyproxy.catalog = emptyCatalog();
         s.joyproxy.rows = [];
-        pushLog(s, "网站已退出，扩展已同步退出");
+        logLine(s, "log.siteLogout");
       }
       return s;
     }
@@ -258,7 +358,8 @@ export async function applySiteSession(raw, opts = {}) {
     s.joyproxy.ignoreSiteUntilLogin = false;
     s.joyproxy.catalogLoading = true;
     s.joyproxy.catalog = emptyCatalog();
-    pushLog(s, session.email ? `已登录 ${session.email}` : "已登录 JoyProxy");
+    if (session.email) logLine(s, "log.signedInEmail", { email: session.email });
+    else logLine(s, "log.signedIn");
     return s;
   });
   await refreshBadge(state);
@@ -288,7 +389,7 @@ export async function joyproxyWebLogin() {
   const pre = await patchState((s) => {
     s.joyproxy.awaitingLogin = true;
     s.joyproxy.ignoreSiteUntilLogin = false;
-    pushLog(s, "正在打开 JoyProxy 登录页，登录成功后会自动同步到扩展");
+    logLine(s, "log.openingLogin");
     return s;
   });
 
@@ -314,7 +415,7 @@ export async function syncJoyproxyFromBrowser() {
     const haveToken = Boolean(cur.persona === "purchased" && cur.joyproxy?.token);
     const session = await findSiteSession({ probe: !haveToken });
     if (session?.token) return applySiteSession(session, { force: true });
-    if (haveToken && !cur.joyproxy?.catalog?.loaded && !cur.joyproxy?.catalogLoading) {
+    if (haveToken && !cur.joyproxy?.catalogLoading) {
       refreshJoyproxyCatalog().catch(() => {});
     }
     return decorate(await loadState());
@@ -425,12 +526,14 @@ export async function joyproxyLogout() {
     s.joyproxy.token = "";
     s.joyproxy.extractToken = "";
     s.joyproxy.masterToken = "";
+    s.joyproxy.proxyUsername = "";
+    s.joyproxy.proxyPassword = "";
     s.joyproxy.awaitingLogin = false;
     s.joyproxy.ignoreSiteUntilLogin = true;
     s.joyproxy.catalogLoading = false;
     s.joyproxy.catalog = emptyCatalog();
     s.joyproxy.rows = [];
-    pushLog(s, "已退出 JoyProxy");
+    logLine(s, "log.signedOut");
     return s;
   });
   await refreshBadge(state);
@@ -461,7 +564,7 @@ export async function stopJoyproxy() {
   await patchState((s) => {
     if (s.joyproxy?.running) {
       s.joyproxy.running = false;
-      pushLog(s, "已停止 JoyProxy 更换");
+      logLine(s, "log.stopJoy");
     }
     if (s.joyproxy) s.joyproxy.applySession = false;
     return s;
@@ -470,12 +573,12 @@ export async function stopJoyproxy() {
   return decorate(await loadState());
 }
 
-async function failJoyproxy(error) {
+async function failJoyproxy(key, params = {}) {
   const next = await patchState((s) => {
-    pushLog(s, error, "error");
+    logLine(s, key, params, "error");
     return s;
   });
-  return { ok: false, error, state: decorate(next) };
+  return { ok: false, error: t(key, params), state: decorate(next) };
 }
 
 export async function runJoyproxy(opts = {}) {
@@ -485,15 +588,15 @@ export async function runJoyproxy(opts = {}) {
     opened = await loadState();
   }
   const jp = opened.joyproxy || {};
-  if (!jp.token) return failJoyproxy("请先登录 JoyProxy");
-  if (!jp.extractToken) return failJoyproxy("缺少提取令牌，请刷新后再试");
+  if (!jp.token) return failJoyproxy("err.needLogin");
+  if (!jp.extractToken) return failJoyproxy("err.needExtractToken");
 
   const kind = jp.kind === "static" ? "static" : "dynamic";
   if (kind === "dynamic" && !(jp.catalog?.networks || []).length) {
-    return failJoyproxy("没有可用的动态产品");
+    return failJoyproxy("err.noDynamic");
   }
   if (kind === "static" && !(jp.catalog?.lines || []).length) {
-    return failJoyproxy("没有可用的静态线路");
+    return failJoyproxy("err.noStatic");
   }
 
   const doApply = opts.apply !== undefined ? Boolean(opts.apply) : jp.mode === "apply";
@@ -508,10 +611,10 @@ export async function runJoyproxy(opts = {}) {
     s.joyproxy.running = true;
     s.joyproxy.applySession = doApply;
     s.joyproxy.rows = [];
-    if (timed && doApply) pushLog(s, "开始 JoyProxy 定时更换：仅测试成功后才会写入");
-    else if (timed) pushLog(s, "开始 JoyProxy 定时测试：不改变浏览器代理");
-    else if (doApply) pushLog(s, "开始 JoyProxy 测试并设为代理：不通则保持当前设置");
-    else pushLog(s, "开始 JoyProxy 测试：不改变浏览器代理");
+    if (timed && doApply) logLine(s, "log.jpStartTimedApply");
+    else if (timed) logLine(s, "log.jpStartTimedTest");
+    else if (doApply) logLine(s, "log.jpStartApply");
+    else logLine(s, "log.jpStartTest");
     return s;
   });
 
@@ -527,7 +630,7 @@ export async function runJoyproxy(opts = {}) {
         extracted = await extractOneProxy(fresh.joyproxy);
       } catch (err) {
         await patchState((s) => {
-          pushLog(s, `提取失败：${humanizeJoyproxyError(err)}`, "error");
+          logLine(s, "log.extractFail", errorParams(err, true), "error");
           return s;
         });
         if (!timed) break;
@@ -550,13 +653,13 @@ export async function runJoyproxy(opts = {}) {
       rows.push(row);
       await patchState((s) => {
         s.joyproxy.rows = rows.slice(-50);
-        pushLog(s, `已提取 ${shortProxy(extracted)}`);
+        logLine(s, "log.extracted", { proxy: shortProxy(extracted) });
         return s;
       });
 
       if (row.protocol === "socks5" && row.username) {
         await patchState((s) => {
-          pushLog(s, "SOCKS5 带账密时 Chrome 无法代填，建议改用 HTTP", "warn");
+          logLine(s, "log.socksAuth", "warn");
           return s;
         });
       }
@@ -570,9 +673,19 @@ export async function runJoyproxy(opts = {}) {
       await patchState((s) => {
         s.joyproxy.rows = rows.slice(-50);
         if (result.ok) {
-          pushLog(s, `JoyProxy #${row.index} ${shortProxy(extracted)} 成功 ${row.latency}ms · ${row.note}`, "ok");
+          logLine(
+            s,
+            "log.jpRowOk",
+            { n: row.index, proxy: shortProxy(extracted), ms: row.latency, note: row.note },
+            "ok"
+          );
         } else {
-          pushLog(s, `JoyProxy #${row.index} ${shortProxy(extracted)} 失败 · ${result.error}`, "error");
+          logLine(
+            s,
+            "log.jpRowFail",
+            { n: row.index, proxy: shortProxy(extracted), detail: result.error },
+            "error"
+          );
         }
         return s;
       });
@@ -597,7 +710,7 @@ export async function runJoyproxy(opts = {}) {
             continue;
           }
           await patchState((s) => {
-            pushLog(s, `测试通过但未写入浏览器：${applied.error}`, "error");
+            logLine(s, "log.applyFail", { detail: applied.error }, "error");
             return s;
           });
         }
@@ -611,16 +724,15 @@ export async function runJoyproxy(opts = {}) {
     const next = await patchState((s) => {
       s.joyproxy.running = false;
       s.joyproxy.rows = rows.slice(-50);
-      const rate = `连通率 ${okCount}/${total}（${pct}%）`;
-      if (doApply) pushLog(s, `结束：${rate}，设为代理 ${switched} 次`, okCount ? "ok" : "warn");
-      else pushLog(s, `结束：${rate}，未改变浏览器代理`, okCount ? "ok" : "warn");
+      if (doApply) logLine(s, "log.doneApply", { ok: okCount, total, pct, switched }, okCount ? "ok" : "warn");
+      else logLine(s, "log.doneProbe", { ok: okCount, total, pct }, okCount ? "ok" : "warn");
       return s;
     });
     return { ok: true, state: decorate(next) };
   } catch (err) {
     const next = await patchState((s) => {
       s.joyproxy.running = false;
-      pushLog(s, `JoyProxy 失败：${humanizeJoyproxyError(err)}`, "error");
+      logLine(s, "log.jpFail", errorParams(err, true), "error");
       return s;
     });
     return { ok: false, error: humanizeJoyproxyError(err), state: decorate(next) };
@@ -660,10 +772,46 @@ function asProxy(input) {
   return parseProxyInput(input.raw || "", asProto(input.protocol));
 }
 
+async function probeProxy(proxy, connection, settings, opts = {}) {
+  const run = (item, authTest = false) =>
+    testViaPac(
+      item,
+      connection,
+      settings,
+      (s, ms) => fetchGeo(s, ms, { authTest }),
+      authTest ? 15000 : 9000
+    );
+  if (!hasHttpAuth(proxy)) {
+    if (opts.fromJoyproxy) {
+      throw new Error("extract_missing_auth");
+    }
+    return { geo: await run(proxy, false), proxy, via: "whitelist" };
+  }
+  try {
+    return { geo: await run(proxy, true), proxy, via: "auth" };
+  } catch (authErr) {
+    if (opts.fromJoyproxy) throw authErr;
+    const bare = { ...proxy, username: "", password: "" };
+    try {
+      return { geo: await run(bare, false), proxy: bare, via: "whitelist" };
+    } catch {
+      throw authErr;
+    }
+  }
+}
+
+async function ensureRelayReady(proxy, settings) {
+  if (!shouldUseLocalRelay(proxy, settings)) return;
+  const ok = await ensureLocalRelay(proxy, settings);
+  if (!ok) {
+    throw new Error(localRelayRequiredError(proxy, settings, chrome.runtime.id));
+  }
+}
+
 export async function testProxy(input, opts = {}) {
   const proxy = asProxy(input);
   if (!proxy) {
-    return { ok: false, error: "请粘贴 host:port 或完整代理链接" };
+    return { ok: false, error: t("err.needPaste") };
   }
   if (!opts.quiet && !opts.fromJoyproxy) {
     await stopOtherRotators();
@@ -671,43 +819,52 @@ export async function testProxy(input, opts = {}) {
   const state = await loadState();
   await refreshBadge(state, "testing");
   try {
-    const geo = await testViaPac(
-      proxy,
-      state.connection,
-      state.settings,
-      fetchGeo,
-      9000
-    );
+    await ensureRelayReady(proxy, state.settings);
+    const probed = await probeProxy(proxy, state.connection, state.settings, opts);
+    const used = probed.proxy;
+    const geo = probed.geo;
     const next = await patchState((s) => {
       s.lastTest = {
         ok: true,
-        proxy,
+        proxy: used,
+        via: probed.via,
         ...geo,
         at: Date.now(),
       };
       if (!opts.skipRecent) {
         pushRecent(s, {
-          ...proxy,
+          ...used,
           latency: geo.latency,
           country: geo.country,
         });
       }
       if (!opts.quiet) {
-        pushLog(
+        logLine(
           s,
-          `测试成功 ${shortProxy(proxy)} · ${geo.ip} · ${geo.country || ""} · ${geo.latency}ms`,
+          "log.testOk",
+          {
+            proxy: shortProxy(used),
+            ip: geo.ip,
+            country: geo.country || "",
+            ms: geo.latency,
+            howKey: probed.via === "whitelist" && hasHttpAuth(proxy) ? "log.testOkWhitelist" : "",
+          },
           "ok"
         );
+      } else if (probed.via === "whitelist" && hasHttpAuth(proxy)) {
+        logLine(s, "log.testWhitelist", { proxy: shortProxy(used) }, "warn");
       }
       return s;
     });
     await refreshBadge(next);
-    return { ok: true, geo, proxy, state: decorate(next) };
+    return { ok: true, geo, proxy: used, via: probed.via, state: decorate(next) };
   } catch (err) {
-    const message = humanizeError(err);
+    const message = hasHttpAuth(proxy)
+      ? chromeProxyAuthHelp(err, proxy, state.settings)
+      : humanizeError(err);
     const next = await patchState((s) => {
       s.lastTest = { ok: false, proxy, error: message, at: Date.now() };
-      if (!opts.quiet) pushLog(s, `测试失败 ${shortProxy(proxy)} · ${message}`, "error");
+      if (!opts.quiet) logLine(s, "log.testFail", { proxy: shortProxy(proxy), detail: message }, "error");
       return s;
     });
     await refreshBadge(next);
@@ -716,8 +873,8 @@ export async function testProxy(input, opts = {}) {
 }
 
 export async function connectProxy(input, opts = {}) {
-  const proxy = asProxy(input);
-  if (!proxy) return { ok: false, error: "没有可连接的代理" };
+  let proxy = asProxy(input);
+  if (!proxy) return { ok: false, error: t("err.noProxy") };
   if (!opts.fromExtract && !opts.fromJoyproxy) {
     await stopOtherRotators();
   }
@@ -740,6 +897,7 @@ export async function connectProxy(input, opts = {}) {
       tested = result.state.lastTest;
     }
     geo = tested;
+    if (tested?.proxy) proxy = tested.proxy;
   }
 
   return commitConnection(proxy, geo || {}, opts);
@@ -764,6 +922,24 @@ async function commitConnection(proxy, geo, opts = {}) {
     return { ok: false, error: humanizeError(err) };
   }
 
+  let verifiedGeo = geo;
+  if (hasHttpAuth(proxy)) {
+    try {
+      await ensureRelayReady(proxy, state.settings);
+      await ensureOffscreenDocument();
+      await sleep(800);
+      verifiedGeo = await verifyAuthTunnel(15000);
+    } catch (err) {
+      setPendingAuth(null);
+      try {
+        await clearProxyConfig();
+      } catch {
+        /* ignore */
+      }
+      return { ok: false, error: chromeProxyAuthHelp(err, proxy, state.settings) };
+    }
+  }
+
   const rolled = hasRandomPrivacy(state.settings.privacy)
     ? resolveLivePrivacy(state.settings.privacy, state.settings)
     : null;
@@ -781,10 +957,10 @@ async function commitConnection(proxy, geo, opts = {}) {
       fromExtract: Boolean(opts.fromExtract),
       fromJoyproxy: Boolean(opts.fromJoyproxy),
       productName: opts.productName || "",
-      exitIp: geo.ip,
-      country: geo.country,
-      countryCode: geo.countryCode || countryCode(geo.country),
-      latency: geo.latency,
+      exitIp: verifiedGeo.ip,
+      country: verifiedGeo.country,
+      countryCode: verifiedGeo.countryCode || countryCode(verifiedGeo.country),
+      latency: verifiedGeo.latency,
       connectedAt: Date.now(),
     };
     s.source = opts.fromJoyproxy ? "joyproxy" : "own";
@@ -793,9 +969,20 @@ async function commitConnection(proxy, geo, opts = {}) {
     );
     if (saved) {
       saved.lastResult = "通";
-      saved.lastLatency = geo?.latency ?? saved.lastLatency;
+      saved.lastLatency = verifiedGeo?.latency ?? saved.lastLatency;
     }
-    pushLog(s, `已设为代理 ${shortProxy(proxy)} · ${formatIpLine(geo.ip, geo.country, "?")}`, "ok");
+    pushLog(
+      s,
+      {
+        key: "log.connected",
+        params: {
+          proxy: shortProxy(proxy),
+          geo: formatIpLine(verifiedGeo.ip, verifiedGeo.country, opts.skipTest ? "—" : "?"),
+          skipKey: opts.skipTest ? "log.skipTest" : "",
+        },
+      },
+      "ok"
+    );
     return s;
   });
   await refreshBadge(next);
@@ -809,12 +996,20 @@ export async function disconnect() {
     if (s.joyproxy) s.joyproxy.running = false;
     return s;
   });
-  const state = await loadState();
-  await restoreProxy(state.savedProxySettings);
   setPendingAuth(null);
+  try {
+    await clearProxyConfig();
+  } catch {
+    const state = await loadState();
+    try {
+      await restoreProxy(state.savedProxySettings);
+    } catch {
+      /* ignore */
+    }
+  }
   await applyWebRtc(false);
   const next = await patchState((s) => {
-    pushLog(s, "已恢复浏览器直连");
+    logLine(s, "log.direct");
     s.connection = null;
     return s;
   });
@@ -825,17 +1020,17 @@ export async function disconnect() {
 
 export async function retestCurrent() {
   const state = await loadState();
-  if (!state.connection) return { ok: false, error: "当前未连接" };
+  if (!state.connection) return { ok: false, error: t("err.notConnected") };
   return testProxy(state.connection);
 }
 
 export async function applyProfile(id) {
   const state = await loadState();
   if (state.extract?.mode === "apply" || state.extract?.mode === "switch") {
-    return { ok: false, error: "当前为「测通后设为代理」，请先改回「仅测试」" };
+    return { ok: false, error: t("err.applyLocked") };
   }
   const profile = state.profiles.find((p) => p.id === id);
-  if (!profile) return { ok: false, error: "保存的代理不存在" };
+  if (!profile) return { ok: false, error: t("err.profileMissing") };
   await patchState((s) => {
     s.source = "own";
     s.pendingDraft = {
@@ -874,7 +1069,7 @@ export async function upsertProfile(profile) {
       password: profile.password || "",
       activeId: id,
     };
-    pushLog(s, `已保存 ${profile.host}:${profile.port}`);
+    logLine(s, "log.savedProxy", { addr: `${profile.host}:${profile.port}` });
     return s;
   });
   return decorate(state);
@@ -892,7 +1087,7 @@ export async function removeProfile(id) {
         activeId: "",
       };
     }
-    pushLog(s, "已删除保存的代理");
+    logLine(s, "log.deletedProxy");
     return s;
   });
   return decorate(state);
@@ -920,7 +1115,7 @@ export async function importProfiles(text) {
       });
     }
     s.profiles = [...added, ...s.profiles];
-    pushLog(s, `导入 ${added.length} 条代理`);
+    logLine(s, "log.importedProxies", { n: added.length });
     return s;
   });
   return { ok: true, count: added.length, state: decorate(state) };
@@ -941,7 +1136,7 @@ function extractFields(extract) {
     name: (extract.name || "").trim(),
     url: (extract.url || "").trim(),
     regex: extract.regex || "",
-    protocol: asProto(extract.protocol),
+    protocol: "http",
     username: extract.username || "",
     password: extract.password || "",
     timed: Boolean(extract.timed),
@@ -953,16 +1148,16 @@ function extractFields(extract) {
 
 function nameFromUrl(url) {
   try {
-    return new URL(url).hostname || "未命名 API";
+    return new URL(url).hostname || t("err.unnamedApi");
   } catch {
-    return (url || "").slice(0, 40) || "未命名 API";
+    return (url || "").slice(0, 40) || t("err.unnamedApi");
   }
 }
 
 export async function upsertExtractApi() {
   const current = await loadState();
   const fields = extractFields(current.extract);
-  if (!fields.url) return { ok: false, error: "请填写 API 地址" };
+  if (!fields.url) return { ok: false, error: t("err.needApiUrl") };
   if (!fields.name) fields.name = nameFromUrl(fields.url);
 
   const state = await patchState((s) => {
@@ -973,7 +1168,7 @@ export async function upsertExtractApi() {
         Object.assign(hit, fields);
         s.extractApis = list;
         s.extract = { ...s.extract, ...fields };
-        pushLog(s, `已更新 API「${fields.name}」`);
+        logLine(s, "log.updatedApi", { name: fields.name });
         return s;
       }
     }
@@ -982,13 +1177,13 @@ export async function upsertExtractApi() {
       Object.assign(same, fields);
       s.extractApis = list;
       s.extract = { ...s.extract, ...fields, activeId: same.id };
-      pushLog(s, `已保存 API「${fields.name}」`);
+      logLine(s, "log.savedApi", { name: fields.name });
       return s;
     }
     const id = `api${Date.now()}`;
     s.extractApis = [{ id, ...fields }, ...list];
     s.extract = { ...s.extract, ...fields, activeId: id };
-    pushLog(s, `已保存 API「${fields.name}」`);
+    logLine(s, "log.savedApi", { name: fields.name });
     return s;
   });
   return { ok: true, state: decorate(state) };
@@ -1053,7 +1248,7 @@ export async function removeExtractApi(id) {
       rows: [],
       lastSummary: null,
     };
-    pushLog(s, "已删除 API");
+    logLine(s, "log.deletedApi");
     return s;
   });
   return decorate(state);
@@ -1094,7 +1289,7 @@ export async function importExtractApis(text) {
       });
     }
     s.extractApis = [...added, ...list];
-    pushLog(s, `导入 ${added.length} 条 API`);
+    logLine(s, "log.importedApis", { n: added.length });
     return s;
   });
   return { ok: true, count: added.length, state: decorate(state) };
@@ -1110,7 +1305,7 @@ export async function stopExtract() {
   await patchState((s) => {
     if (s.extract.running) {
       s.extract.running = false;
-      pushLog(s, "已停止");
+      logLine(s, "log.stopped");
     }
     s.extract.applySession = false;
     return s;
@@ -1143,7 +1338,7 @@ async function fetchExtractBatch(extract) {
 export async function runExtract() {
   const opened = await loadState();
   const url = (opened.extract.url || "").trim();
-  if (!url) return { ok: false, error: "请填写 API 地址" };
+  if (!url) return { ok: false, error: t("err.needApiUrl") };
 
   const applyOnOk = opened.extract.mode === "apply" || opened.extract.mode === "switch";
   const timed = Boolean(opened.extract.timed);
@@ -1161,10 +1356,10 @@ export async function runExtract() {
     s.extract.running = true;
     s.extract.applySession = applyOnOk;
     s.extract.rows = [];
-    if (applyOnOk && timed) pushLog(s, "开始定时更换浏览器代理：仅测试成功后才会写入");
-    else if (applyOnOk) pushLog(s, "开始测试并设为代理：不通则保持当前设置");
-    else if (timed) pushLog(s, "开始定时测试：不改变浏览器代理");
-    else pushLog(s, "开始测试：只统计连通率，不改变浏览器代理");
+    if (applyOnOk && timed) logLine(s, "log.exStartTimedApply");
+    else if (applyOnOk) logLine(s, "log.exStartApply");
+    else if (timed) logLine(s, "log.exStartTimedTest");
+    else logLine(s, "log.exStartTest");
     return s;
   });
 
@@ -1183,13 +1378,13 @@ export async function runExtract() {
         if (!timed) refetch = false;
         if (!queue.length) {
           await patchState((s) => {
-            pushLog(s, "提取接口没有返回 host:port", "error");
+            logLine(s, "log.extractEmpty", "error");
             return s;
           });
           break;
         }
         await patchState((s) => {
-          pushLog(s, `提取到 ${queue.length} 条`);
+          logLine(s, "log.extractCount", { n: queue.length });
           return s;
         });
       }
@@ -1233,13 +1428,19 @@ export async function runExtract() {
       await patchState((s) => {
         s.extract.rows = rows.slice();
         if (result.ok) {
-          pushLog(
+          logLine(
             s,
-            `API #${row.index} ${item.host}:${item.port} 成功 ${row.latency}ms · ${row.note}`,
+            "log.apiRowOk",
+            { n: row.index, addr: `${item.host}:${item.port}`, ms: row.latency, note: row.note },
             "ok"
           );
         } else {
-          pushLog(s, `API #${row.index} ${item.host}:${item.port} 失败 · ${result.error}`, "error");
+          logLine(
+            s,
+            "log.apiRowFail",
+            { n: row.index, addr: `${item.host}:${item.port}`, detail: result.error },
+            "error"
+          );
         }
         return s;
       });
@@ -1253,9 +1454,13 @@ export async function runExtract() {
           if (applied.ok) {
             switched += 1;
             await patchState((s) => {
-              pushLog(
+              logLine(
                 s,
-                `已设为代理 ${item.host}:${item.port} · ${formatIpLine(result.geo.ip, result.geo.country)}`,
+                "log.connected",
+                {
+                  proxy: `${item.host}:${item.port}`,
+                  geo: formatIpLine(result.geo.ip, result.geo.country),
+                },
                 "ok"
               );
               return s;
@@ -1268,7 +1473,7 @@ export async function runExtract() {
             continue;
           }
           await patchState((s) => {
-            pushLog(s, `测试通过但未写入浏览器：${applied.error}`, "error");
+            logLine(s, "log.applyFail", { detail: applied.error }, "error");
             return s;
           });
         }
@@ -1290,16 +1495,15 @@ export async function runExtract() {
         mode: applyOnOk ? "apply" : "probe",
         timed,
       };
-      const rate = `连通率 ${okCount}/${total}（${pct}%）`;
-      if (applyOnOk) pushLog(s, `结束：${rate}，设为代理 ${switched} 次`, okCount ? "ok" : "warn");
-      else pushLog(s, `结束：${rate}，未改变浏览器代理`, okCount ? "ok" : "warn");
+      if (applyOnOk) logLine(s, "log.doneApply", { ok: okCount, total, pct, switched }, okCount ? "ok" : "warn");
+      else logLine(s, "log.doneProbe", { ok: okCount, total, pct }, okCount ? "ok" : "warn");
       return s;
     });
     return { ok: true, state: decorate(next) };
   } catch (err) {
     const next = await patchState((s) => {
       s.extract.running = false;
-      pushLog(s, `提取失败：${humanizeError(err)}`, "error");
+      logLine(s, "log.extractFail", errorParams(err), "error");
       return s;
     });
     return { ok: false, error: humanizeError(err), state: decorate(next) };
@@ -1312,6 +1516,48 @@ export async function clearLogs() {
     return s;
   });
   return decorate(state);
+}
+
+const ACTION_POPUP = "src/popup/popup.html";
+
+export async function applyPanelUiMode(mode = "side") {
+  const canSide = Boolean(chrome.sidePanel?.setPanelBehavior);
+  const useSide = mode === "side" && canSide;
+  try {
+    if (canSide) {
+      await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: useSide });
+    }
+    if (chrome.action?.setPopup) {
+      await chrome.action.setPopup({ popup: useSide ? "" : ACTION_POPUP });
+    }
+  } catch {
+    try {
+      if (chrome.action?.setPopup) await chrome.action.setPopup({ popup: ACTION_POPUP });
+    } catch {
+      /* older chrome */
+    }
+  }
+}
+
+let contextMenuInstallSeq = 0;
+
+function installContextMenu() {
+  if (!chrome.contextMenus?.create) return;
+  const seq = ++contextMenuInstallSeq;
+  chrome.contextMenus.removeAll(() => {
+    void chrome.runtime.lastError;
+    if (seq !== contextMenuInstallSeq) return;
+    chrome.contextMenus.create(
+      {
+        id: "joyproxy-test-site",
+        title: t("menu.testSite"),
+        contexts: ["page", "action"],
+      },
+      () => {
+        void chrome.runtime.lastError;
+      }
+    );
+  });
 }
 
 export async function saveSettings(settings) {
@@ -1327,6 +1573,13 @@ export async function saveSettings(settings) {
     s.settings = { ...s.settings, ...settings, privacy };
     return s;
   });
+  if (settings.panelMode !== undefined) {
+    await applyPanelUiMode(state.settings.panelMode);
+  }
+  if (settings.uiLocale !== undefined) {
+    installContextMenu();
+    await refreshBadge(state);
+  }
   if (state.connection) {
     await applyBrowserProxy(state.connection, state.settings);
   }
@@ -1344,34 +1597,33 @@ export async function runSiteCleanup(kind) {
   try {
     if (kind === "cookies") {
       const origin = await clearSiteCookies(tab);
-      return logCleanup(`已清理 ${origin} 的 Cookie`);
+      return logCleanup("log.cleanedCookies", { origin });
     }
     if (kind === "site") {
       const origin = await clearSiteData(tab);
-      return logCleanup(`已清理 ${origin} 的 Cookie、本地存储与缓存`);
+      return logCleanup("log.cleanedSite", { origin });
     }
     if (kind === "cookies-all") {
       await clearAllCookies();
-      return logCleanup("已清理全部 Cookie");
+      return logCleanup("log.cleanedAllCookies");
     }
     if (kind === "cache") {
       await clearCache();
-      return logCleanup("已清理浏览器缓存");
+      return logCleanup("log.cleanedCache");
     }
-    return { ok: false, error: "未知清理类型" };
+    return { ok: false, error: t("err.unknown") };
   } catch (err) {
-    const message = humanizeError(err);
     const next = await patchState((s) => {
-      pushLog(s, `清理失败：${message}`, "error");
+      logLine(s, "log.cleanFail", errorParams(err), "error");
       return s;
     });
-    return { ok: false, error: message, state: decorate(next) };
+    return { ok: false, error: humanizeError(err), state: decorate(next) };
   }
 }
 
-async function logCleanup(text) {
+async function logCleanup(key, params = {}) {
   const next = await patchState((s) => {
-    pushLog(s, text, "ok");
+    logLine(s, key, params, "ok");
     return s;
   });
   return { ok: true, state: decorate(next) };
@@ -1386,23 +1638,23 @@ export async function testCurrentSite(url) {
   const state = await loadState();
   if (!state.connection) {
     const next = await patchState((s) => {
-      pushLog(s, `「测试此站」${host || url}：当前直连，请先连接代理`, "warn");
+      logLine(s, "log.testSiteDirect", { host: host || url }, "warn");
       return s;
     });
-    return { ok: false, error: "请先连接代理", state: decorate(next) };
+    return { ok: false, error: t("err.needProxyFirst"), state: decorate(next) };
   }
   const started = Date.now();
   try {
-    const res = await fetch(url, { method: "HEAD", cache: "no-store" });
+    const res = await fetchThroughOffscreen(url, 8000, { method: "HEAD" });
     const ms = Date.now() - started;
     const next = await patchState((s) => {
-      pushLog(s, `当前站 ${host} → ${res.status} · ${ms}ms`);
+      logLine(s, "log.testSiteOk", { host, status: res.status, ms });
       return s;
     });
     return { ok: true, status: res.status, latency: ms, state: decorate(next) };
   } catch (err) {
     const next = await patchState((s) => {
-      pushLog(s, `当前站 ${host} 失败：${humanizeError(err)}`, "error");
+      logLine(s, "log.testSiteFail", errorParams(err, { host }), "error");
       return s;
     });
     return { ok: false, error: humanizeError(err), state: decorate(next) };
@@ -1419,7 +1671,7 @@ export async function refreshBadge(state, phase) {
       variant: "gray",
       badge: "..",
       color: "#64748b",
-      title: "JoyProxy · 测试中",
+      title: t("badge.testing"),
     });
     return;
   }
@@ -1428,48 +1680,108 @@ export async function refreshBadge(state, phase) {
       variant: "color",
       badge: "!",
       color: "#ef4444",
-      title: `JoyProxy · 失败 ${s.lastTest.error || ""}`.trim(),
+      title: t("badge.fail", { detail: s.lastTest.error || "" }).trim(),
     });
     return;
   }
   if (!connected) {
-    const ip = s.realIp?.ip ? ` 真实 IP ${s.realIp.ip}` : "";
+    const title = s.realIp?.ip ? t("badge.directIp", { ip: s.realIp.ip }) : t("badge.direct");
     await setActionAppearance({
       variant: "gray",
       badge: "",
-      title: `JoyProxy · 直连${ip}`,
+      title,
     });
     return;
   }
   const cc = (s.connection.countryCode || countryCode(s.connection.country) || "ON").slice(0, 4);
+  const ms = s.connection.latency ? `${s.connection.latency}ms` : "";
   await setActionAppearance({
     variant: "color",
     badge: cc,
     color: "#6366f1",
-    title: `浏览器代理 ${s.connection.exitIp || s.connection.host} ${s.connection.country || ""} ${
-      s.connection.latency ? s.connection.latency + "ms" : ""
-    }`.trim(),
+    title: t("badge.proxy", {
+      ip: s.connection.exitIp || s.connection.host,
+      country: s.connection.country || "",
+      ms,
+    }).trim(),
   });
 }
 
+function geoErrorParts(err) {
+  const msg = err?.message || String(err || "");
+  if (/abort/i.test(msg)) return { detailKey: "err.timeout" };
+  if (/ECONNREFUSED|connection refused|127\.0\.0\.1:17890|127\.0\.0\.1/i.test(msg)) {
+    return { detailKey: "err.relayDown" };
+  }
+  if (/TUNNEL|ERR_TUNNEL/i.test(msg)) return { detailKey: "err.tunnel" };
+  if (/Failed to fetch|NetworkError|net::|407|ERR_PROXY|PROXY|showing error page|chrome-error/i.test(msg)) {
+    return { detailKey: "err.fetch" };
+  }
+  if (/检测通道 HTTP 5\d\d|lookup channel HTTP 5\d\d/i.test(msg)) return { detailKey: "err.geo5xx" };
+  if (/extract_missing_auth|提取结果缺少账密/i.test(msg)) return { detailKey: "err.extractNoAuth" };
+  if (/检测通道未返回内容/i.test(msg)) return { detailKey: "err.geoEmpty" };
+  if (/检测通道未返回 IP/i.test(msg)) return { detailKey: "err.geoNoIp" };
+  if (/检测通道返回失败/i.test(msg)) return { detailKey: "err.geoFail" };
+  if (/请先填写自定义检测地址/i.test(msg)) return { detailKey: "err.geoCustom" };
+  if (/登录已过期/i.test(msg)) return { detailKey: "err.loginExpired" };
+  if (/无法读取 API 令牌|缺少提取令牌/i.test(msg)) return { detailKey: "err.jpNoToken" };
+  if (/创建账密失败/i.test(msg)) return { detailKey: "err.createCreds" };
+  if (/请先打开一个 http/i.test(msg)) return { detailKey: "err.needHttpTab" };
+  if (/不支持清理 Cookie/i.test(msg)) return { detailKey: "err.noCookieApi" };
+  if (/后台无响应/i.test(msg)) return { detailKey: "err.swGone" };
+  if (/请求失败/i.test(msg)) return { detailKey: "err.requestFail" };
+  if (!msg) return { detailKey: "err.unknown" };
+  return { detailKey: "err.raw", msg };
+}
+
+function joyErrorParts(err) {
+  const key = String(err?.message || err || "").toLowerCase();
+  if (key.includes("all_short_orders_inactive")) return { detailKey: "err.jpInactive" };
+  if (key.includes("short_traffic_exhausted")) return { detailKey: "err.jpTraffic" };
+  if (key.includes("no_short_orders") || key.includes("no_orders_for_network")) return { detailKey: "err.jpNoOrders" };
+  if (key.includes("proxy_credentials_required")) return { detailKey: "err.jpCreds" };
+  if (key.includes("no_extract_token")) return { detailKey: "err.jpNoToken" };
+  if (key.includes("no_ip_for_network")) return { detailKey: "err.jpNoIp" };
+  if (key.includes("insufficient") || key.includes("traffic")) return { detailKey: "err.jpInsufficient" };
+  return geoErrorParts(err);
+}
+
+function errorParams(err, extra = {}) {
+  const joy = extra === true || extra.joy;
+  const rest = extra === true ? {} : { ...extra };
+  delete rest.joy;
+  return { ...(joy ? joyErrorParts(err) : geoErrorParts(err)), ...rest };
+}
+
+function authProxyFailure(err, proxy) {
+  const msg = String(err?.message || err || "");
+  if (!hasHttpAuth(proxy)) return humanizeError(err);
+  if (/abort|超时|timeout|timed out|TUNNEL|ERR_TUNNEL|407|检测通道|lookup channel|Failed to fetch|net::/i.test(msg)) {
+    return t("err.authNo407");
+  }
+  return humanizeError(err);
+}
+
+function chromeProxyAuthHelp(err, proxy, settings) {
+  const raw = String(err?.message || err || "");
+  if (shouldUseLocalRelay(proxy, settings)) {
+    if (/本地转发未启动|Local relay is not running/i.test(raw)) return raw;
+    if (/refused|17890|LOCAL_RELAY/i.test(raw)) {
+      return localRelayRequiredError(proxy, settings, chrome.runtime.id);
+    }
+    return t("err.relayRetry", { detail: humanizeError(err) });
+  }
+  return authProxyFailure(err, proxy);
+}
+
 function humanizeError(err) {
-  const msg = err?.message || String(err || "未知错误");
-  if (/abort/i.test(msg)) return "超时，代理未响应";
-  if (/Failed to fetch|NetworkError|net::/i.test(msg)) return "连不上检测通道（代理可能无效）";
-  return msg;
+  const p = geoErrorParts(err);
+  return t(p.detailKey, p);
 }
 
 function humanizeJoyproxyError(err) {
-  const msg = humanizeError(err);
-  const key = String(msg || "").toLowerCase();
-  if (key.includes("all_short_orders_inactive")) return "动态流量包已失效或用尽，请在网站续费或重新购买";
-  if (key.includes("short_traffic_exhausted")) return "动态流量已用尽";
-  if (key.includes("no_short_orders") || key.includes("no_orders_for_network")) return "没有可用的动态流量包，请换网络类型或先在网站购买";
-  if (key.includes("proxy_credentials_required")) return "当前格式需要账密，请改用 HTTP 提取";
-  if (key.includes("no_extract_token")) return "缺少 API 令牌，请重新登录";
-  if (key.includes("insufficient") || key.includes("traffic")) return "流量不足";
-  if (key.includes("no_ip_for_network")) return "该网络类型当前没有可分配的 IP，请换国家或稍后重试";
-  return msg;
+  const p = joyErrorParts(err);
+  return t(p.detailKey, p);
 }
 
 function sleep(ms) {
@@ -1487,19 +1799,18 @@ function safeHost(url) {
 export function initBackground() {
   installAuthHandler();
   installPrivacyInjection();
-  try {
-    chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: false });
-  } catch {
-    /* older chrome */
-  }
+  applyPanelUiMode("side").catch(() => {});
+  loadState()
+    .then((s) => {
+      installContextMenu();
+      return applyPanelUiMode(s.settings?.panelMode || "side");
+    })
+    .catch(() => applyPanelUiMode("side"));
   chrome.runtime.onInstalled.addListener(() => {
-    chrome.contextMenus.removeAll(() => {
-      chrome.contextMenus.create({
-        id: "joyproxy-test-site",
-        title: "用当前代理测试此站",
-        contexts: ["page", "action"],
-      });
-    });
+    installContextMenu();
+    loadState()
+      .then((s) => applyPanelUiMode(s.settings?.panelMode || "side"))
+      .catch(() => applyPanelUiMode("side"));
   });
   chrome.contextMenus.onClicked.addListener((info, tab) => {
     if (info.menuItemId === "joyproxy-test-site" && tab?.url) {
@@ -1509,7 +1820,12 @@ export function initBackground() {
   chrome.runtime.onStartup?.addListener(() => {
     refreshBadge();
     refreshRealIp();
-    loadState().then((s) => applyHeaderOverrides(s.settings.privacy)).catch(() => {});
+    loadState()
+      .then((s) => {
+        applyPanelUiMode(s.settings?.panelMode || "side");
+        return applyHeaderOverrides(s.settings.privacy);
+      })
+      .catch(() => {});
   });
   refreshBadge();
   refreshRealIp();

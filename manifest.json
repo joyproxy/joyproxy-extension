@@ -1,10 +1,11 @@
 {
   "manifest_version": 3,
   "name": "JoyProxy",
-  "version": "1.0.0",
-  "description": "在本浏览器中测通并设置代理。可用自己的地址、提取 API；登录后可使用已购线路。",
+  "version": "1.4.7",
+  "description": "Test any proxy in this browser, then apply it. Use your own host:port, an extract API, or JoyProxy lines after you sign in.",
   "homepage_url": "https://www.joyproxy.com",
   "minimum_chrome_version": "114",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1QJqzAvFdQpT6jUR+WntbiAHaIqivO5irFJH98DfXCSLKejvTBvKvyGNMnedDednuuTwZqrzDAQ9v5ESdd7izpgKDsJU/jW+vZw7/mA0+B78VspM6G23fzDpNDAInOsoKCYcWS1rhQLh5YHhZdgAlKw7zXQnr7VIJ5MvGRubHFgs60PIo4RwLyrCIupc6CdDBULj/8Vj+6l4yltXCZRxhkN85Ql2QWBPVemw6isApv0RrkprMlPC8Ut0u5gDKO5hubfvqdHPUaMLuq4MlhP3vf90QDB9MgV7eMvP2zWYqcr3dFLVt+kylSYDLzxfztrLZQHL9S6FCH0NYC5vVS9yjQIDAQAB",
   "icons": {
     "16": "src/icons/icon16.png",
     "32": "src/icons/icon32.png",
@@ -12,7 +13,7 @@
     "128": "src/icons/icon128.png"
   },
   "action": {
-    "default_title": "JoyProxy · 直连",
+    "default_title": "JoyProxy",
     "default_popup": "src/popup/popup.html",
     "default_icon": {
       "16": "src/icons/icon16-gray.png",
@@ -38,6 +39,7 @@
     "contextMenus",
     "webRequest",
     "webRequestAuthProvider",
+    "offscreen",
     "privacy",
     "browsingData",
     "declarativeNetRequest",
@@ -48,6 +50,12 @@
   ],
   "host_permissions": [
     "<all_urls>"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/offscreen/fetch-worker.js"],
+      "matches": ["<all_urls>"]
+    }
   ],
   "content_scripts": [
     {

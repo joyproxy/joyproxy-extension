@@ -2,11 +2,11 @@ import { shortProxy } from "../shared/parse.js";
 import { bindComposer } from "../shared/compose.js";
 import { bindCombo, bindSelects } from "../shared/combo.js";
 import { initTips } from "../shared/tips.js";
-import { applyI18n, setLocale, t, UI_LOCALE_OPTIONS } from "../shared/i18n.js";
+import { applyI18n, formatLog, setLocale, t, UI_LOCALE_OPTIONS, UI_PANEL_OPTIONS } from "../shared/i18n.js";
 import { applyTheme, watchTheme, UI_THEME_OPTIONS } from "../shared/theme.js";
 import { formatIpLine, GEO_CHANNEL_OPTIONS } from "../shared/geo.js";
 import { call, fmtTime } from "../shared/rpc.js";
-import { JP_DURATIONS, lineDisplayLabel, networkLabelKey } from "../shared/joyproxy-api.js";
+import { JP_DURATIONS, citiesForGeo, lineDisplayLabel, liveCatalogLines, networkLabelKey, snapJoyDuration } from "../shared/joyproxy-api.js";
 import {
   DPR_PRESETS,
   FONT_PRESETS,
@@ -104,6 +104,7 @@ function scrollNoticesToBottom() {
 }
 
 document.getElementById("copy-ip").addEventListener("click", copyExitIp);
+document.getElementById("restore-direct").addEventListener("click", () => call("DISCONNECT"));
 document.getElementById("clear-notices").addEventListener("click", () => call("CLEAR_LOGS"));
 document.getElementById("open-import").addEventListener("click", () => {
   document.getElementById("import-sheet").hidden = false;
@@ -119,11 +120,13 @@ document.getElementById("jp-refresh").addEventListener("click", () => call("REFR
 document.getElementById("jp-manage").addEventListener("click", () => call("OPEN_JOYPROXY_DASHBOARD"));
 document.getElementById("jp-run").addEventListener("click", runJoyproxy);
 document.getElementById("jp-kind").addEventListener("click", onJpSegClick);
+document.getElementById("jp-session").addEventListener("click", onJpSegClick);
 document.getElementById("jp-mode").addEventListener("click", onJpSegClick);
-document.getElementById("jp-proto").addEventListener("click", onJpSegClick);
 document.getElementById("jp-timed").addEventListener("change", onJpFormChange);
 document.getElementById("jp-network").addEventListener("change", onJpFormChange);
 document.getElementById("jp-country").addEventListener("change", onJpFormChange);
+document.getElementById("jp-state").addEventListener("change", onJpFormChange);
+document.getElementById("jp-city").addEventListener("change", onJpFormChange);
 document.getElementById("jp-duration").addEventListener("change", onJpFormChange);
 document.getElementById("jp-line").addEventListener("change", onJpFormChange);
 document.getElementById("jp-i").addEventListener("change", onJpFormChange);
@@ -173,14 +176,6 @@ document.getElementById("ex-url").addEventListener("keydown", (e) => {
     e.preventDefault();
     onApiUrlCommit();
   }
-});
-document.getElementById("ex-proto").addEventListener("click", async (e) => {
-  const btn = e.target.closest("button[data-v]");
-  if (!btn) return;
-  for (const b of document.querySelectorAll("#ex-proto button")) {
-    b.classList.toggle("active", b === btn);
-  }
-  await persistExtractFromForm();
 });
 document.getElementById("ex-mode").addEventListener("click", async (e) => {
   const btn = e.target.closest("button[data-v]");
@@ -262,6 +257,7 @@ document.getElementById("sys-geo").addEventListener("change", persistGeoChannel)
 document.getElementById("sys-geo-custom").addEventListener("change", persistGeoChannel);
 document.getElementById("sys-ui-lang").addEventListener("change", persistUiLocale);
 document.getElementById("sys-ui-theme").addEventListener("change", persistUiTheme);
+document.getElementById("sys-panel-mode").addEventListener("change", persistPanelMode);
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && changes["joyproxy.v1"]) reload();
@@ -300,10 +296,7 @@ function paintChrome() {
   const line = document.getElementById("conn-line");
   document.getElementById("copy-ip").hidden = !(conn?.exitIp || state.realIp?.ip);
   if (conn) {
-    line.textContent = `浏览器代理 ${formatIpLine(conn.exitIp || shortProxy(conn), conn.country)}`.replace(
-      "浏览器代理",
-      t("proxy.browser")
-    );
+    line.textContent = `${t("proxy.browser")} ${formatIpLine(conn.exitIp || shortProxy(conn), conn.country)}`;
   } else {
     const real = state.realIp;
     line.textContent = real?.error
@@ -312,6 +305,7 @@ function paintChrome() {
   }
   composer.setProfiles(state.profiles, state.pendingDraft?.activeId);
   composer.applyDraft(state.pendingDraft);
+  composer.applySettings(state.settings);
   composer.setConnected(conn);
   composer.setLocked(false);
   paintRunLine();
@@ -359,7 +353,7 @@ async function doImport() {
   document.getElementById("import-sheet").hidden = true;
   document.getElementById("import-text").value = "";
   if (r?.state) state = r.state;
-  toast(`导入 ${r.count} 条`);
+  toast(t("toast.imported", { n: r.count || 0 }));
   paintChrome();
 }
 
@@ -369,7 +363,7 @@ async function doImportApis() {
   document.getElementById("import-api-sheet").hidden = true;
   document.getElementById("import-api-text").value = "";
   if (r?.state) state = r.state;
-  toast(`导入 ${r.count} 条`);
+  toast(t("toast.imported", { n: r.count || 0 }));
   paintExtract();
 }
 
@@ -406,9 +400,6 @@ function paintExtract() {
     extractHydrated = true;
   }
   document.getElementById("ex-timed-fields").hidden = !document.getElementById("ex-timed").checked;
-  for (const b of document.querySelectorAll("#ex-proto button")) {
-    b.classList.toggle("active", (e.protocol === "socks5" ? "socks5" : "http") === b.dataset.v);
-  }
   for (const b of document.querySelectorAll("#ex-mode button")) {
     b.classList.toggle("active", b.dataset.v === mode);
   }
@@ -430,7 +421,7 @@ function paintExtract() {
   }
   latest.hidden = false;
   const statusLabel =
-    row.status === "成功" ? t("api.ok") : row.status === "失败" ? t("api.fail") : row.status;
+    row.status === "成功" ? t("api.ok") : row.status === "失败" ? t("api.fail") : row.status === "测试中" ? t("testing") : row.status;
   const tr = document.createElement("tr");
   tr.innerHTML = `<td>${row.index}</td><td></td><td></td><td>${row.latency ?? "—"}</td>`;
   tr.children[1].textContent = `${row.host}:${row.port}`;
@@ -469,7 +460,7 @@ function readExtractForm() {
     regex: document.getElementById("ex-re").value,
     username: document.getElementById("ex-user").value,
     password: document.getElementById("ex-pass").value,
-    protocol: document.querySelector("#ex-proto button.active")?.dataset.v === "socks5" ? "socks5" : "http",
+    protocol: "http",
     timed,
     count: timed ? Number(document.getElementById("ex-n").value) || 0 : 0,
     intervalSec: timed ? Number(document.getElementById("ex-i").value) || 0 : 0,
@@ -538,7 +529,7 @@ function paintNotices() {
   for (const log of logs) {
     const line = document.createElement("div");
     line.className = `notice-line ${log.level || ""}`;
-    line.textContent = `${fmtTime(log.at)}  ${log.text}`;
+    line.textContent = `${fmtTime(log.at)}  ${formatLog(log)}`;
     box.append(line);
   }
   if (stickToBottom) box.scrollTop = box.scrollHeight;
@@ -770,6 +761,19 @@ function fillUiLangSelect() {
   sel.value = current;
 }
 
+function fillPanelModeSelect() {
+  const sel = document.getElementById("sys-panel-mode");
+  const current = sel.value || state?.settings?.panelMode || "side";
+  sel.innerHTML = "";
+  for (const item of UI_PANEL_OPTIONS) {
+    const opt = document.createElement("option");
+    opt.value = item.id;
+    opt.textContent = t(item.key);
+    sel.append(opt);
+  }
+  sel.value = current === "popup" ? "popup" : "side";
+}
+
 function paintSystem() {
   const sel = document.getElementById("sys-geo");
   const current = sel.value || state.settings?.geoChannel || "ipinfo";
@@ -794,11 +798,15 @@ function paintSystem() {
   }
   fillUiLangSelect();
   fillUiThemeSelect();
+  fillPanelModeSelect();
   if (document.activeElement?.id !== "sys-ui-lang") {
     document.getElementById("sys-ui-lang").value = state.settings?.uiLocale || "auto";
   }
   if (document.activeElement?.id !== "sys-ui-theme") {
     document.getElementById("sys-ui-theme").value = state.settings?.uiTheme || "auto";
+  }
+  if (document.activeElement?.id !== "sys-panel-mode") {
+    document.getElementById("sys-panel-mode").value = state.settings?.panelMode === "popup" ? "popup" : "side";
   }
   const manifest = chrome.runtime.getManifest();
   document.getElementById("sys-version").textContent = `${t("sys.version")} ${manifest.version || "—"}`;
@@ -810,7 +818,9 @@ async function persistUiLocale() {
   setLocale(uiLocale);
   applyI18n(document);
   fillUiLangSelect();
+  fillPanelModeSelect();
   document.getElementById("sys-ui-lang").value = uiLocale;
+  document.getElementById("sys-panel-mode").value = state.settings?.panelMode === "popup" ? "popup" : "side";
   toolsReady = false;
   paintChrome();
   paintSource();
@@ -824,6 +834,14 @@ async function persistUiTheme() {
   applyTheme(uiTheme);
   fillUiThemeSelect();
   document.getElementById("sys-ui-theme").value = uiTheme;
+  picks.forEach((p) => p.sync());
+}
+
+async function persistPanelMode() {
+  const panelMode = document.getElementById("sys-panel-mode").value === "popup" ? "popup" : "side";
+  await call("SAVE_SETTINGS", { settings: { panelMode, panelModeRev: 1 } });
+  fillPanelModeSelect();
+  document.getElementById("sys-panel-mode").value = panelMode;
   picks.forEach((p) => p.sync());
 }
 
@@ -852,7 +870,7 @@ function paintAccount() {
   const catalog = jp.catalog || {};
   const loading = Boolean(jp.catalogLoading);
   const networks = catalog.networks || [];
-  const lines = catalog.lines || [];
+  const lines = liveCatalogLines(catalog.lines);
   const hasAny = networks.length > 0 || lines.length > 0;
 
   if (acc.loggedIn && jp.token && !catalog.loaded && !loading) {
@@ -862,7 +880,7 @@ function paintAccount() {
   document.getElementById("jp-load").hidden = !loading;
   document.getElementById("jp-empty").hidden = loading || hasAny || !catalog.loaded;
   const emptyNote = document.querySelector("#jp-empty .note");
-  if (emptyNote) emptyNote.textContent = catalog.error || t("jp.empty");
+  if (emptyNote) emptyNote.textContent = catalog.error ? t(catalog.error) || catalog.error : t("jp.empty");
   document.getElementById("jp-form").hidden = !hasAny;
 
   const kind = jp.kind === "static" ? "static" : "dynamic";
@@ -873,10 +891,21 @@ function paintAccount() {
   document.getElementById("jp-dynamic").hidden = kind !== "dynamic";
   document.getElementById("jp-static").hidden = kind !== "static";
   document.getElementById("jp-timed-wrap").hidden = kind !== "dynamic";
+  const sessionType = jp.sessionType === "rotating" ? "rotating" : "sticky";
+  for (const b of document.querySelectorAll("#jp-session button")) {
+    b.classList.toggle("active", b.dataset.v === sessionType);
+  }
+  document.getElementById("jp-duration-wrap").hidden = kind !== "dynamic" || sessionType === "rotating";
 
   if (document.activeElement?.id !== "jp-network") fillJpNetwork(networks, jp.network);
   if (document.activeElement?.id !== "jp-country") fillJpCountry(catalog.countries || [], jp.countryGeoname);
-  if (document.activeElement?.id !== "jp-duration") fillJpDuration(jp.duration || "2m");
+  if (document.activeElement?.id !== "jp-state") {
+    fillJpState(catalog.states || [], jp.countryGeoname, jp.stateGeoname);
+  }
+  if (document.activeElement?.id !== "jp-city") {
+    fillJpCity(catalog.cities || {}, jp.countryGeoname, jp.stateGeoname, jp.cityGeoname);
+  }
+  if (document.activeElement?.id !== "jp-duration") fillJpDuration(jp.duration || "1m");
   if (document.activeElement?.id !== "jp-line") fillJpLine(lines, jp.selectedId);
   if (document.activeElement?.id !== "jp-timed") document.getElementById("jp-timed").checked = Boolean(jp.timed);
   if (document.activeElement?.id !== "jp-i") {
@@ -891,11 +920,6 @@ function paintAccount() {
   for (const b of document.querySelectorAll("#jp-mode button")) {
     b.classList.toggle("active", b.dataset.v === mode);
   }
-  const proto = jp.protocol === "socks5" ? "socks5" : "http";
-  for (const b of document.querySelectorAll("#jp-proto button")) {
-    b.classList.toggle("active", b.dataset.v === proto);
-  }
-  document.getElementById("jp-socks-hint").hidden = proto !== "socks5";
 
   const runBtn = document.getElementById("jp-run");
   runBtn.disabled = false;
@@ -931,15 +955,40 @@ function fillJpNetwork(networks, current) {
 }
 
 function fillJpCountry(countries, current) {
-  const items = [["", t("jp.country.any")], ...countries.map((c) => [c.id, c.name || c.iso || c.id])];
+  const items = [
+    ["", t("jp.country.any")],
+    ...countries.map((c) => {
+      const name = c.name || c.iso || c.id;
+      const label = c.iso && name !== c.iso ? `${name} (${c.iso})` : name;
+      return [c.id, label];
+    }),
+  ];
   fillJpSelect(document.getElementById("jp-country"), items, current || "");
+}
+
+function fillJpState(states, countryId, current) {
+  const sel = document.getElementById("jp-state");
+  const items = [
+    ["", t("jp.state.any")],
+    ...(countryId ? states.map((s) => [s.id, s.iso && s.name !== s.iso ? `${s.name} (${s.iso})` : s.name || s.iso || s.id]) : []),
+  ];
+  fillJpSelect(sel, items, current || "");
+  sel.disabled = !countryId;
+}
+
+function fillJpCity(cities, countryId, stateId, current) {
+  const sel = document.getElementById("jp-city");
+  const list = countryId ? citiesForGeo(cities, countryId, stateId) : [];
+  const items = [["", t("jp.city.any")], ...list.map((c) => [c.id, c.name || c.id])];
+  fillJpSelect(sel, items, current || "");
+  sel.disabled = !countryId;
 }
 
 function fillJpDuration(current) {
   fillJpSelect(
     document.getElementById("jp-duration"),
     JP_DURATIONS.map(([id, key]) => [id, t(key)]),
-    current || "2m"
+    snapJoyDuration(current, "sticky") || "1m"
   );
 }
 
@@ -967,36 +1016,38 @@ function paintJpLatest(jp) {
   const tb = document.getElementById("jp-body");
   tb.innerHTML = "";
   const rows = jp.rows || [];
-  const row = rows.length ? rows[rows.length - 1] : null;
-  if (!row) {
+  if (!rows.length) {
     latest.hidden = true;
     return;
   }
   latest.hidden = false;
-  const statusLabel = row.status === "成功" ? t("api.ok") : row.status === "失败" ? t("api.fail") : row.status;
-  const tr = document.createElement("tr");
-  tr.innerHTML = `<td>${row.index}</td><td></td><td></td><td>${row.latency ?? "—"}</td>`;
-  tr.children[1].textContent = `${row.host}:${row.port}`;
-  tr.children[2].textContent = statusLabel;
-  const act = document.createElement("td");
-  if (row.status === "成功") {
-    const proxy = row.proxy || row;
-    const current =
-      Boolean(state.connection?.fromJoyproxy) &&
-      proxy.host === state.connection.host &&
-      Number(proxy.port) === Number(state.connection.port);
-    if (current) {
-      act.append(button(t("restore"), "btn btn-sm btn-danger", () => call("DISCONNECT")));
-    } else {
-      act.append(
-        button(t("connect"), "btn btn-sm btn-primary", () =>
-          call("CONNECT", { proxy, fromJoyproxy: true })
-        )
-      );
+  for (const row of rows) {
+    const statusLabel =
+      row.status === "成功" ? t("api.ok") : row.status === "失败" ? t("api.fail") : row.status === "测试中" ? t("testing") : row.status;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${row.index}</td><td></td><td></td><td>${row.latency ?? "—"}</td>`;
+    tr.children[1].textContent = `${row.host}:${row.port}`;
+    tr.children[2].textContent = statusLabel;
+    const act = document.createElement("td");
+    if (row.status === "成功") {
+      const proxy = row.proxy || row;
+      const current =
+        Boolean(state.connection?.fromJoyproxy) &&
+        proxy.host === state.connection.host &&
+        Number(proxy.port) === Number(state.connection.port);
+      if (current) {
+        act.append(button(t("restore"), "btn btn-sm btn-danger", () => call("DISCONNECT")));
+      } else {
+        act.append(
+          button(t("connect"), "btn btn-sm btn-primary", () =>
+            call("CONNECT", { proxy, fromJoyproxy: true })
+          )
+        );
+      }
     }
+    tr.append(act);
+    tb.append(tr);
   }
-  tr.append(act);
-  tb.append(tr);
 }
 
 function readJoyproxyForm() {
@@ -1007,9 +1058,12 @@ function readJoyproxyForm() {
     mode: document.querySelector("#jp-mode button.active")?.dataset.v === "apply" ? "apply" : "probe",
     network: document.getElementById("jp-network").value,
     countryGeoname: document.getElementById("jp-country").value,
+    stateGeoname: document.getElementById("jp-state").value,
+    cityGeoname: document.getElementById("jp-city").value,
+    sessionType: document.querySelector("#jp-session button.active")?.dataset.v === "rotating" ? "rotating" : "sticky",
     duration: document.getElementById("jp-duration").value,
     selectedId: document.getElementById("jp-line").value,
-    protocol: document.querySelector("#jp-proto button.active")?.dataset.v === "socks5" ? "socks5" : "http",
+    protocol: "http",
     timed,
     intervalSec: timed ? Number(document.getElementById("jp-i").value) || 0 : 0,
     count: timed ? Number(document.getElementById("jp-n").value) || 0 : 0,
@@ -1030,14 +1084,23 @@ async function onJpSegClick(e) {
     document.getElementById("jp-dynamic").hidden = kind !== "dynamic";
     document.getElementById("jp-static").hidden = kind !== "static";
     document.getElementById("jp-timed-wrap").hidden = kind !== "dynamic";
+    const rotating = document.querySelector("#jp-session button.active")?.dataset.v === "rotating";
+    document.getElementById("jp-duration-wrap").hidden = kind !== "dynamic" || rotating;
   }
-  if (seg.id === "jp-proto") {
-    document.getElementById("jp-socks-hint").hidden = btn.dataset.v !== "socks5";
+  if (seg.id === "jp-session") {
+    document.getElementById("jp-duration-wrap").hidden = btn.dataset.v === "rotating";
   }
   await persistJoyproxyFromForm();
 }
 
-async function onJpFormChange() {
+async function onJpFormChange(e) {
+  const id = e?.target?.id;
+  if (id === "jp-country") {
+    document.getElementById("jp-state").value = "";
+    document.getElementById("jp-city").value = "";
+  } else if (id === "jp-state") {
+    document.getElementById("jp-city").value = "";
+  }
   if (document.getElementById("jp-timed").checked) {
     const interval = document.getElementById("jp-i");
     if (interval && !String(interval.value).trim()) interval.value = "10";
@@ -1062,7 +1125,7 @@ async function copyExitIp() {
   if (!ip) return;
   try {
     await navigator.clipboard.writeText(ip);
-    toast("已复制 IP");
+    toast(t("toast.copiedIp"));
   } catch {
     toast(ip);
   }

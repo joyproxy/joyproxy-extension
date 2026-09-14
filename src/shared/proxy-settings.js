@@ -1,9 +1,19 @@
+import { browserProxyTarget, shouldUseLocalRelay } from "./local-relay.js";
 import { resolveGeoTarget } from "./geo.js";
+import { ensureOffscreenDocument } from "./offscreen-fetch.js";
 import { DEFAULT_BYPASS } from "./store.js";
 
 let authHandlerInstalled = false;
 let pendingAuth = null;
 let testLock = Promise.resolve();
+
+export function hasHttpAuth(proxy) {
+  return proxy?.protocol !== "socks5" && Boolean(proxy?.username && String(proxy.username).length);
+}
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 function pacEscape(s) {
   return String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
@@ -122,7 +132,11 @@ export async function clearProxyConfig() {
 export function setPendingAuth(proxy) {
   pendingAuth =
     proxy?.username != null && String(proxy.username).length
-      ? { username: proxy.username, password: proxy.password || "" }
+      ? {
+          username: String(proxy.username),
+          password: String(proxy.password || ""),
+          host: String(proxy.host || ""),
+        }
       : null;
 }
 
@@ -130,31 +144,22 @@ export function installAuthHandler() {
   if (authHandlerInstalled) return;
   authHandlerInstalled = true;
   chrome.webRequest.onAuthRequired.addListener(
-    (details, asyncCallback) => {
-      if (!details.isProxy || !pendingAuth) {
-        asyncCallback({ cancel: false });
-        return;
-      }
-      asyncCallback({ authCredentials: pendingAuth });
+    (details) => {
+      const creds = pendingAuth;
+      if (!creds?.username || !details.isProxy) return;
+      return {
+        authCredentials: {
+          username: creds.username,
+          password: creds.password || "",
+        },
+      };
     },
     { urls: ["<all_urls>"] },
-    ["asyncBlocking"]
+    ["blocking"]
   );
 }
 
-export async function applyBrowserProxy(proxy, settingsOrBypass) {
-  setPendingAuth(proxy);
-  const settings = normalizeProxySettings(settingsOrBypass);
-  const exclude = uniqueLines(settings.bypass?.length ? settings.bypass : DEFAULT_BYPASS);
-  const include = uniqueLines(settings.proxyInclude);
-  const allowOnly = settings.proxyMode === "allow";
-  if (allowOnly || exclude.some(needsPacPattern) || include.some(needsPacPattern)) {
-    await setProxyConfig({
-      mode: "pac_script",
-      pacScript: { data: buildRoutingPac(proxy, { allowOnly, include, exclude }) },
-    });
-    return;
-  }
+async function applyFixedProxy(proxy, bypassList) {
   await setProxyConfig({
     mode: "fixed_servers",
     rules: {
@@ -163,9 +168,32 @@ export async function applyBrowserProxy(proxy, settingsOrBypass) {
         host: proxy.host,
         port: Number(proxy.port),
       },
-      bypassList: exclude,
+      bypassList,
     },
   });
+}
+
+export async function applyBrowserProxy(proxy, settingsOrBypass) {
+  const settings = normalizeProxySettings(settingsOrBypass);
+  const applied = browserProxyTarget(proxy, settings);
+  if (shouldUseLocalRelay(proxy, settings)) {
+    setPendingAuth(null);
+  } else {
+    setPendingAuth(proxy);
+  }
+  const exclude = uniqueLines(settings.bypass?.length ? settings.bypass : DEFAULT_BYPASS);
+  const include = uniqueLines(settings.proxyInclude);
+  const allowOnly = settings.proxyMode === "allow";
+  const wantPac = allowOnly || exclude.some(needsPacPattern) || include.some(needsPacPattern);
+  // PAC + HTTP proxy 407 auth is unreliable in Chrome; keep credentials on fixed_servers.
+  if (wantPac && !hasHttpAuth(proxy)) {
+    await setProxyConfig({
+      mode: "pac_script",
+      pacScript: { data: buildRoutingPac(proxy, { allowOnly, include, exclude }) },
+    });
+    return;
+  }
+  await applyFixedProxy(applied, exclude);
 }
 
 export async function restoreProxy(saved) {
@@ -181,15 +209,41 @@ export async function restoreProxy(saved) {
   }
 }
 
-async function withTestProxy(proxy, connection, settings, fn) {
-  const current = await getProxySettings();
+async function waitProxyMode(mode, timeoutMs = 1500) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const cfg = await getProxySettings();
+    if (cfg?.value?.mode === mode) return;
+    await sleep(40);
+  }
+}
+
+async function applyTestProxy(proxy, connection, settings) {
+  const applied = browserProxyTarget(proxy, settings);
+  if (hasHttpAuth(proxy)) {
+    if (!shouldUseLocalRelay(proxy, settings)) {
+      setPendingAuth(proxy);
+    } else {
+      setPendingAuth(null);
+    }
+    await applyFixedProxy(applied, ["localhost", "127.0.0.1", "<local>"]);
+    await waitProxyMode("fixed_servers");
+    return;
+  }
+  setPendingAuth(null);
   const testHost = resolveGeoTarget(settings).host;
-  const pac = buildTestPac(proxy, connection, testHost);
-  setPendingAuth(proxy);
   await setProxyConfig({
     mode: "pac_script",
-    pacScript: { data: pac },
+    pacScript: { data: buildTestPac(proxy, connection, testHost) },
   });
+  await waitProxyMode("pac_script");
+}
+
+async function withTestProxy(proxy, connection, settings, fn) {
+  const current = await getProxySettings();
+  await applyTestProxy(proxy, connection, settings);
+  await ensureOffscreenDocument();
+  await sleep(hasHttpAuth(proxy) ? 1200 : 200);
   try {
     return await fn();
   } finally {
@@ -197,11 +251,14 @@ async function withTestProxy(proxy, connection, settings, fn) {
       if (connection) {
         await applyBrowserProxy(connection, settings);
       } else if (current?.levelOfControl === "controlled_by_this_extension" && current.value) {
+        setPendingAuth(null);
         await setProxyConfig(current.value);
       } else {
+        setPendingAuth(null);
         await clearProxyConfig();
       }
     } catch {
+      setPendingAuth(null);
       await clearProxyConfig();
     }
   }

@@ -129,6 +129,7 @@ export function bindSelect(select) {
   menu.className = "combo-menu";
   menu.hidden = true;
   select.classList.add("combo-native");
+  select.tabIndex = -1;
   select.parentNode.insertBefore(wrap, select);
   wrap.append(input, toggle, select);
 

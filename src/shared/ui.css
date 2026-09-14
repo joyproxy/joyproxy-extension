@@ -104,6 +104,16 @@ textarea { resize: vertical; min-height: 72px; }
 
 .row { display: flex; gap: 8px; }
 .row > * { flex: 1; }
+.host-port {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  gap: 8px;
+  align-items: end;
+}
+.host-port .port-field input {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
 .muted { color: var(--muted); }
 .small { font-size: 12px; }
 .tiny { font-size: 11px; color: var(--muted); }
@@ -145,7 +155,8 @@ label[data-tip],
   font-weight: 650;
   cursor: pointer;
 }
-.text-btn:hover { text-decoration: underline; }
+.text-btn.danger { color: var(--red); }
+.text-btn.danger:hover { text-decoration: underline; }
 
 .check {
   display: flex;
@@ -242,6 +253,21 @@ html[data-theme="light"] .adv {
 .result[hidden],
 .hint[hidden] {
   display: none !important;
+}
+
+.relay-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.relay-cmd {
+  word-break: break-all;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
 }
 
 .toast {

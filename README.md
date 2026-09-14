@@ -5,6 +5,7 @@
 - **Official website:** https://www.joyproxy.com
 - **Extension privacy policy:** https://www.joyproxy.com/privacy-extension.html
 - **Repository:** https://github.com/joyproxy/joyproxy-extension
+- **Developer zip (load unpacked):** https://github.com/joyproxy/joyproxy-extension/releases/latest/download/joyproxy-extension-unpacked.zip
 
 > **JoyProxy** provides high-performance global proxy infrastructure and developer tools. Visit **https://www.joyproxy.com** for residential, datacenter, business/ISP, and mobile proxy services.
 
@@ -23,6 +24,7 @@ You can test and apply **your own** proxies without a JoyProxy account. Sign in 
 - **Official website:** https://www.joyproxy.com
 - **Extension privacy policy:** https://www.joyproxy.com/privacy-extension.html
 - **Repository:** https://github.com/joyproxy/joyproxy-extension
+- **Developer zip:** https://github.com/joyproxy/joyproxy-extension/releases/latest/download/joyproxy-extension-unpacked.zip
 - **Related tools:** [Tester](https://github.com/joyproxy/joyproxy-tester) · [Android client](https://github.com/joyproxy/joyproxy-client-android) · [Proxy server](https://github.com/joyproxy/joyproxy-server)
 
 ---
@@ -63,21 +65,28 @@ You can test and apply **your own** proxies without a JoyProxy account. Sign in 
 
 ---
 
-### Install (load unpacked)
+### Install
 
-Works on Chrome, Edge, Brave, Opera, Vivaldi, and other Chromium browsers (**Chrome 114+**). There is no store listing yet; load the source folder.
+Works on Chrome, Edge, Brave, Opera, Vivaldi, and other Chromium browsers (**Chrome 114+**).
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/joyproxy/joyproxy-extension.git
-   cd joyproxy-extension
-   ```
-2. Open `chrome://extensions`.
-3. Turn on **Developer mode**.
-4. Click **Load unpacked** and select the repository root (the folder that contains `manifest.json`).
-5. Pin JoyProxy on the toolbar. Click the icon for the popup, or open the workbench from the popup.
+**Mainland China:** the Chrome Web Store is often blocked. Download the zip and load it in Developer mode.
 
-After pulling updates, click **Reload** on the extension card.
+1. Download [joyproxy-extension-unpacked.zip](https://github.com/joyproxy/joyproxy-extension/releases/latest/download/joyproxy-extension-unpacked.zip) (GitHub Releases, latest).
+2. Unzip it.
+3. Open `chrome://extensions` and turn on **Developer mode**.
+4. Click **Load unpacked** and select the unzipped folder (the one that contains `manifest.json`).
+5. Pin JoyProxy on the toolbar.
+
+Older builds: [Releases](https://github.com/joyproxy/joyproxy-extension/releases). After replacing files, click **Reload** on the extension card.
+
+You can also clone the repository and load that folder:
+
+```bash
+git clone https://github.com/joyproxy/joyproxy-extension.git
+cd joyproxy-extension
+```
+
+Then **Load unpacked** on the repo root. After `git pull`, click **Reload**.
 
 ---
 
@@ -161,6 +170,7 @@ MIT License © 2026 JoyProxy
 - **官方网站：** https://www.joyproxy.com
 - **扩展隐私政策：** https://www.joyproxy.com/privacy-extension.html
 - **开源仓库：** https://github.com/joyproxy/joyproxy-extension
+- **开发者模式安装包：** https://github.com/joyproxy/joyproxy-extension/releases/latest/download/joyproxy-extension-unpacked.zip
 - **相关工具：** [测通工具](https://github.com/joyproxy/joyproxy-tester) · [Android 客户端](https://github.com/joyproxy/joyproxy-client-android) · [代理服务端](https://github.com/joyproxy/joyproxy-server)
 
 ---
@@ -201,21 +211,28 @@ MIT License © 2026 JoyProxy
 
 ---
 
-### 安装（加载未打包扩展）
+### 安装
 
-支持 Chrome、Edge、Brave、Opera、Vivaldi 等 Chromium 内核浏览器（**Chrome 114 及以上**）。目前还没上 Chrome 应用商店，请用源码目录直接加载。
+支持 Chrome、Edge、Brave、Opera、Vivaldi 等 Chromium 内核浏览器（**Chrome 114 及以上**）。
 
-1. 克隆代码：
-   ```bash
-   git clone https://github.com/joyproxy/joyproxy-extension.git
-   cd joyproxy-extension
-   ```
-2. 打开 `chrome://extensions`。
-3. 打开右上角 **开发者模式**。
-4. 点 **加载已解压的扩展程序**，选这个仓库的根目录（能看到 `manifest.json` 的那一层）。
-5. 把 JoyProxy 固定到工具栏。点图标打开弹窗；完整功能从弹窗进工作台。
+中国大陆访问不了 Chrome 应用商店时，请下载 zip，用开发者模式加载：
 
-以后 `git pull` 更新了代码，到扩展管理页点一下 **重新加载**。
+1. 下载 [joyproxy-extension-unpacked.zip](https://github.com/joyproxy/joyproxy-extension/releases/latest/download/joyproxy-extension-unpacked.zip)（GitHub Releases 最新版）。
+2. 解压。
+3. 打开 `chrome://extensions`，打开右上角 **开发者模式**。
+4. 点 **加载已解压的扩展程序**，选解压出来的文件夹（能看到 `manifest.json` 的那一层）。
+5. 把 JoyProxy 固定到工具栏。
+
+历史版本见 [Releases](https://github.com/joyproxy/joyproxy-extension/releases)。换了文件后，到扩展管理页点一下 **重新加载**。
+
+也可以克隆仓库再加载：
+
+```bash
+git clone https://github.com/joyproxy/joyproxy-extension.git
+cd joyproxy-extension
+```
+
+然后 **加载已解压的扩展程序**，选仓库根目录。以后 `git pull` 后点 **重新加载**。
 
 ---
 
@@ -300,6 +317,7 @@ MIT License © 2026 JoyProxy
 - **官方網站：** https://www.joyproxy.com
 - **擴充功能隱私權政策：** https://www.joyproxy.com/privacy-extension.html
 - **開源倉庫：** https://github.com/joyproxy/joyproxy-extension
+- **開發人員模式安裝包：** https://github.com/joyproxy/joyproxy-extension/releases/latest/download/joyproxy-extension-unpacked.zip
 - **相關工具：** [測通工具](https://github.com/joyproxy/joyproxy-tester) · [Android 用戶端](https://github.com/joyproxy/joyproxy-client-android) · [代理伺服器](https://github.com/joyproxy/joyproxy-server)
 
 ---
@@ -340,21 +358,28 @@ MIT License © 2026 JoyProxy
 
 ---
 
-### 安裝（載入未封裝擴充功能）
+### 安裝
 
-支援 Chrome、Edge、Brave、Opera、Vivaldi 等 Chromium 核心瀏覽器（**Chrome 114 以上**）。目前還沒上架 Chrome 線上應用程式商店，請用原始碼目錄直接載入。
+支援 Chrome、Edge、Brave、Opera、Vivaldi 等 Chromium 核心瀏覽器（**Chrome 114 以上**）。
 
-1. 複製程式碼：
-   ```bash
-   git clone https://github.com/joyproxy/joyproxy-extension.git
-   cd joyproxy-extension
-   ```
-2. 打開 `chrome://extensions`。
-3. 打開右上角 **開發人員模式**。
-4. 點 **載入未封裝項目**，選這個倉庫的根目錄（看得到 `manifest.json` 的那一層）。
-5. 把 JoyProxy 固定到工具列。點圖示打開彈窗；完整功能從彈窗進工作台。
+中國大陸若無法開啟 Chrome 線上應用程式商店，請下載 zip，用開發人員模式載入：
 
-之後 `git pull` 更新了程式碼，到擴充功能管理頁點一下 **重新載入**。
+1. 下載 [joyproxy-extension-unpacked.zip](https://github.com/joyproxy/joyproxy-extension/releases/latest/download/joyproxy-extension-unpacked.zip)（GitHub Releases 最新版）。
+2. 解壓縮。
+3. 打開 `chrome://extensions`，開啟右上角 **開發人員模式**。
+4. 點 **載入未封裝項目**，選解壓後的資料夾（看得到 `manifest.json` 的那一層）。
+5. 把 JoyProxy 固定到工具列。
+
+歷史版本見 [Releases](https://github.com/joyproxy/joyproxy-extension/releases)。更換檔案後，到擴充功能管理頁點一下 **重新載入**。
+
+也可以複製倉庫再載入：
+
+```bash
+git clone https://github.com/joyproxy/joyproxy-extension.git
+cd joyproxy-extension
+```
+
+然後 **載入未封裝項目**，選倉庫根目錄。之後 `git pull` 後點 **重新載入**。
 
 ---
 

@@ -1,3 +1,5 @@
+import { setLocale, t } from "./i18n.js";
+
 const KEY = "joyproxy.v1";
 
 export const DEFAULT_BYPASS = [
@@ -28,6 +30,8 @@ export const DEFAULT_STATE = {
     network: "residential",
     country: "",
     countryGeoname: "",
+    stateGeoname: "",
+    cityGeoname: "",
     product: "residential",
     selectedId: "",
     timed: false,
@@ -35,16 +39,19 @@ export const DEFAULT_STATE = {
     count: 0,
     running: false,
     protocol: "http",
-    duration: "2m",
+    duration: "1m",
+    sessionType: "sticky",
     email: "",
     method: "",
     token: "",
     extractToken: "",
     masterToken: "",
+    proxyUsername: "",
+    proxyPassword: "",
     awaitingLogin: false,
     ignoreSiteUntilLogin: false,
     catalogLoading: false,
-    catalog: { loaded: false, networks: [], lines: [], countries: [], error: "" },
+    catalog: { loaded: false, networks: [], lines: [], countries: [], states: [], cities: {}, geoTreeCountry: "", error: "" },
     rows: [],
   },
   recent: [],
@@ -76,6 +83,10 @@ export const DEFAULT_STATE = {
     socks5AuthHintDismissed: false,
     proxyMode: "all",
     proxyInclude: [],
+    useLocalRelay: false,
+    localRelayPort: 17890,
+    panelMode: "side",
+    panelModeRev: 1,
     uiLocale: "auto",
     uiTheme: "auto",
     privacy: {
@@ -118,6 +129,7 @@ export async function loadState() {
   const saved = bag[KEY];
   if (!saved) {
     const state = clone(DEFAULT_STATE);
+    setLocale(state.settings?.uiLocale || "auto");
     seedDemo(state);
     await saveState(state);
     return state;
@@ -145,6 +157,15 @@ export async function loadState() {
   };
   if (!Array.isArray(state.joyproxy.rows)) state.joyproxy.rows = [];
   let dirty = false;
+  if (state.joyproxy.sessionType !== "rotating") state.joyproxy.sessionType = "sticky";
+  if (state.joyproxy.duration === "30s" || !state.joyproxy.duration) {
+    state.joyproxy.duration = "1m";
+    dirty = true;
+  }
+  if (state.joyproxy.kind === "dynamic" && state.joyproxy.protocol !== "http") {
+    state.joyproxy.protocol = "http";
+    dirty = true;
+  }
   if (state.persona === "trial") {
     state.persona = state.joyproxy?.token ? "purchased" : "guest";
     dirty = true;
@@ -153,6 +174,13 @@ export async function loadState() {
     state.persona = "guest";
     dirty = true;
   }
+  if (Number(state.settings?.panelModeRev || 0) < 1) {
+    state.settings.panelMode = "side";
+    state.settings.panelModeRev = 1;
+    dirty = true;
+  }
+  if (state.settings.panelMode !== "popup") state.settings.panelMode = "side";
+  setLocale(state.settings?.uiLocale || "auto");
   if (dirty) await saveState(state);
   return state;
 }
@@ -172,16 +200,23 @@ export async function patchState(mutator) {
 
 function seedDemo(state) {
   state.seeded = true;
-  state.logs = [{ id: "l1", at: Date.now(), level: "info", text: "扩展已加载。粘贴代理后可测试，确认无误再设为代理。" }];
+  state.logs = [{ id: "l1", at: Date.now(), level: "info", key: "log.loaded", params: {}, text: t("log.loaded") }];
 }
 
-export function pushLog(state, text, level = "info") {
-  state.logs.unshift({
+export function pushLog(state, entry, level = "info") {
+  const rec = {
     id: `l${Date.now()}-${Math.random().toString(16).slice(2, 6)}`,
     at: Date.now(),
     level,
-    text,
-  });
+  };
+  if (typeof entry === "string") {
+    rec.text = entry;
+  } else {
+    rec.key = entry.key;
+    rec.params = entry.params || {};
+    rec.text = t(entry.key, rec.params);
+  }
+  state.logs.unshift(rec);
   state.logs = state.logs.slice(0, 200);
 }
 

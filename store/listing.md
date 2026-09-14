@@ -3,6 +3,7 @@
 隐私政策（填仪表盘，不要填网站那份）：https://www.joyproxy.com/privacy-extension.html  
 官网：https://www.joyproxy.com  
 支持邮箱：support@joyproxy.com  
+商店 Support URL：https://www.joyproxy.com/service.html  
 类别：Productivity（或 Tools）  
 语言：简体中文、繁体中文、英语  
 
@@ -99,6 +100,7 @@ JoyProxy 用來在 Chrome / Edge / Brave 等 Chromium 瀏覽器裡測代理、�
 | `sidePanel` | Open the workbench side panel. | 打开工作台侧栏。 |
 | `contextMenus` | Right-click “test this site with the current proxy”. | 网页右键：用当前代理测试此站。 |
 | `webRequest` + `webRequestAuthProvider` | Supply HTTP proxy username/password when the proxy challenges the browser. | HTTP 代理要账密时自动带上。 |
+| `offscreen` | Run connectivity checks in a hidden page so Chrome can complete HTTP proxy authentication. | 在隐藏页发起检测请求，否则带账密的 HTTP 代理测不通。 |
 | `tabs` | Open the JoyProxy login or dashboard tab; find an already signed-in JoyProxy tab. | 打开登录页/后台；查找已打开的官网标签。 |
 | `scripting` | Read JoyProxy site login state from joyproxy.com tabs; optionally inject User-Agent and related page settings the user enabled in Advanced. | 读取官网登录状态；用户在「高级」里开启后，才注入 UA 等页面设置。 |
 | `privacy` | Optional WebRTC IP handling policy, only if the user turns it on. | 仅当用户打开「限制 WebRTC」时修改 WebRTC 策略。 |

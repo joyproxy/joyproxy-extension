@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN" data-theme="dark" data-i18n-title="panel.title">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -20,6 +20,7 @@
       </div>
       <div class="header-actions">
         <button type="button" class="text-btn" id="copy-ip" hidden data-i18n="copyIp">复制 IP</button>
+        <button type="button" class="text-btn danger" id="restore-direct" data-i18n="restore" data-i18n-tip="restore.tip" data-tip="清除当前浏览器代理，恢复直连">恢复直连</button>
       </div>
     </header>
 
@@ -32,20 +33,28 @@
       <div class="workspace-body">
         <section class="tab-pane" data-source-pane="own">
           <div class="card inset composer" id="composer">
-            <div class="field">
-              <div class="field-head">
-                <label data-i18n="proxy.address">代理地址</label>
-                <div class="row-actions">
-                  <button type="button" class="text-btn" data-profile-save data-i18n="save">保存</button>
-                  <button type="button" class="text-btn" id="open-import" data-i18n="import">导入</button>
-                  <button type="button" class="text-btn" data-profile-new hidden data-i18n="new">新建</button>
-                  <button type="button" class="text-btn" data-profile-del hidden data-i18n="delete">删除</button>
+            <div class="host-port">
+              <div class="field">
+                <div class="field-head">
+                  <label data-i18n="proxy.address">地址</label>
+                  <div class="row-actions">
+                    <button type="button" class="text-btn" data-profile-save data-i18n="save">保存</button>
+                    <button type="button" class="text-btn" id="open-import" data-i18n="import">导入</button>
+                    <button type="button" class="text-btn" data-profile-new hidden data-i18n="new">新建</button>
+                    <button type="button" class="text-btn" data-profile-del hidden data-i18n="delete">删除</button>
+                  </div>
+                </div>
+                <div class="combo">
+                  <input data-raw data-i18n-placeholder="proxy.placeholder" placeholder="域名或 IP，可粘贴 host:port" autocomplete="off" />
+                  <button type="button" class="combo-toggle" data-profile-toggle data-i18n-aria="proxy.savedList" aria-label="已保存列表"></button>
+                  <div class="combo-menu" data-profile-menu hidden></div>
                 </div>
               </div>
-              <div class="combo">
-                <input data-raw data-i18n-placeholder="proxy.placeholder" placeholder="填写或选择已保存的代理" autocomplete="off" />
-                <button type="button" class="combo-toggle" data-profile-toggle data-i18n-aria="proxy.savedList" aria-label="已保存列表"></button>
-                <div class="combo-menu" data-profile-menu hidden></div>
+              <div class="field port-field">
+                <div class="field-head">
+                  <label data-i18n="proxy.port">端口</label>
+                </div>
+                <input data-port inputmode="numeric" data-i18n-placeholder="proxy.port.ph" placeholder="端口" autocomplete="off" />
               </div>
             </div>
             <div class="composer-actions">
@@ -56,17 +65,12 @@
                 <button type="button" class="btn btn-primary" data-connect data-i18n="connect">设为代理</button>
               </span>
             </div>
-            <details class="adv">
+            <details class="adv" open>
               <summary data-i18n="adv.options">高级选项</summary>
               <div class="composer-grid">
-                <div class="seg" data-proto>
-                  <button type="button" data-v="http" class="active" data-i18n="proto.http">HTTP / HTTPS</button>
-                  <button type="button" data-v="socks5">SOCKS5</button>
-                </div>
                 <input data-user data-i18n-placeholder="user" placeholder="用户名" autocomplete="off" />
                 <input data-pass type="password" data-i18n-placeholder="pass" placeholder="密码" autocomplete="off" />
               </div>
-              <p class="hint" data-socks-hint hidden data-i18n="socks.hint">Chrome 无法为 SOCKS5 携带账密，建议 HTTP 或对端 IP 白名单。</p>
             </details>
           </div>
         </section>
@@ -119,10 +123,6 @@
                 <label data-i18n="api.regex">正则（可空，默认识别 host:port）</label>
                 <input id="ex-re" data-i18n-placeholder="api.regex.ph" placeholder="可选" />
               </div>
-              <div class="seg" id="ex-proto" style="margin-bottom:8px">
-                <button type="button" data-v="http" class="active" data-i18n="proto.http">HTTP / HTTPS</button>
-                <button type="button" data-v="socks5">SOCKS5</button>
-              </div>
               <div class="row" style="margin-bottom:8px">
                 <input id="ex-user" data-i18n-placeholder="user" placeholder="用户名" autocomplete="off" />
                 <input id="ex-pass" type="password" data-i18n-placeholder="pass" placeholder="密码" autocomplete="off" />
@@ -168,15 +168,30 @@
                     <label data-i18n="jp.network">网络</label>
                     <select id="jp-network"></select>
                   </div>
+                  <div class="field" style="margin-top:8px">
+                    <label data-i18n="jp.country">国家</label>
+                    <select id="jp-country"></select>
+                  </div>
                   <div class="row" style="margin-top:8px">
                     <div class="field">
-                      <label data-i18n="jp.country">国家</label>
-                      <select id="jp-country"></select>
+                      <label data-i18n="jp.state">省 / 州</label>
+                      <select id="jp-state"></select>
                     </div>
                     <div class="field">
-                      <label data-i18n="jp.duration">时长</label>
-                      <select id="jp-duration"></select>
+                      <label data-i18n="jp.city">城市</label>
+                      <select id="jp-city"></select>
                     </div>
+                  </div>
+                  <div class="field" style="margin-top:8px">
+                    <label data-i18n="jp.session">会话</label>
+                    <div class="seg" id="jp-session">
+                      <button type="button" data-v="sticky" class="active" data-i18n="jp.session.sticky" data-i18n-tip="jp.session.sticky.tip" data-tip="同一会话内出口 IP 保持不变">粘性</button>
+                      <button type="button" data-v="rotating" data-i18n="jp.session.rotating" data-i18n-tip="jp.session.rotating.tip" data-tip="每次请求换新 IP">轮换</button>
+                    </div>
+                  </div>
+                  <div class="field" id="jp-duration-wrap" style="margin-top:8px">
+                    <label data-i18n="jp.duration">粘性时长</label>
+                    <select id="jp-duration"></select>
                   </div>
                 </div>
                 <div id="jp-static" hidden>
@@ -207,14 +222,6 @@
                     </div>
                   </div>
                 </div>
-                <details class="adv" id="jp-adv">
-                  <summary data-i18n="adv.options">高级选项</summary>
-                  <div class="seg" id="jp-proto" style="margin-top:8px">
-                    <button type="button" data-v="http" class="active" data-i18n="proto.http">HTTP / HTTPS</button>
-                    <button type="button" data-v="socks5">SOCKS5</button>
-                  </div>
-                  <p class="hint" id="jp-socks-hint" hidden data-i18n="socks.hint">Chrome 无法为 SOCKS5 携带账密，建议 HTTP 或对端 IP 白名单。</p>
-                </details>
               </div>
               <button type="button" class="btn btn-primary btn-block" id="jp-run" data-i18n="api.start">开始测试</button>
               <div id="jp-latest" hidden>
@@ -288,7 +295,7 @@
               <textarea id="proxy-exclude" rows="8" placeholder="localhost&#10;*.joyproxy.com"></textarea>
             </div>
           </div>
-          <details class="adv" id="priv-more">
+          <details class="adv" id="priv-more" open>
             <summary data-i18n="tools.more">更多选项</summary>
             <div class="card inset" style="margin-top:8px">
               <div class="field">
@@ -403,6 +410,14 @@
                 <option value="dark">深色</option>
               </select>
             </div>
+            <div class="field" style="margin-top:8px">
+              <label data-i18n="sys.panel" data-i18n-tip="sys.panel.tip" data-tip="点工具栏图标时打开侧栏或小窗口。Chrome 侧栏在窗口右侧。改过之后会记住你的选择。">打开方式</label>
+              <select id="sys-panel-mode">
+                <option value="side">右侧侧栏</option>
+                <option value="popup">工具栏小窗口</option>
+              </select>
+            </div>
+            <p class="tiny" style="margin-top:8px" data-i18n="sys.panel.note">侧栏会贴在浏览器右侧。若当前浏览器没有侧栏，会改用独立窗口。</p>
           </div>
           <div class="card inset">
             <div class="section-head"><span data-i18n="sys.channel">检测通道</span></div>

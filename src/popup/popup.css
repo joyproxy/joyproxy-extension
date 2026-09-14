@@ -2,7 +2,8 @@ html, body {
   width: 360px;
   min-height: 0;
   max-height: 580px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background:
     radial-gradient(520px 220px at 0% -20%, rgba(102, 126, 234, .28), transparent 60%),
     var(--bg);
@@ -24,6 +25,7 @@ html, body {
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 750; letter-spacing: .2px; }
 .brand img { border-radius: 6px; }
 .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.header-actions .text-btn { white-space: nowrap; }
 .row-actions { display: flex; gap: 4px; flex-shrink: 0; }
 
 .status {

@@ -5,7 +5,7 @@ import { applyI18n, setLocale, t } from "../shared/i18n.js";
 import { applyTheme, watchTheme } from "../shared/theme.js";
 import { formatIpLine } from "../shared/geo.js";
 import { call } from "../shared/rpc.js";
-import { lineDisplayLabel, networkLabelKey } from "../shared/joyproxy-api.js";
+import { lineDisplayLabel, liveCatalogLines, networkLabelKey } from "../shared/joyproxy-api.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -18,6 +18,7 @@ $("open-panel").addEventListener("click", openPanel);
 $("btn-login").addEventListener("click", () => call("JOYPROXY_WEB_LOGIN"));
 $("btn-logout").addEventListener("click", () => call("JOYPROXY_LOGOUT"));
 $("copy-ip").addEventListener("click", copyExitIp);
+$("restore-direct").addEventListener("click", () => call("DISCONNECT"));
 $("jp-apply").addEventListener("click", applyJoyproxy);
 $("jp-test").addEventListener("click", testJoyproxy);
 $("jp-product").addEventListener("change", async () => {
@@ -98,12 +99,13 @@ function paint() {
 
   composer.setProfiles(state.profiles, state.pendingDraft?.activeId);
   composer.applyDraft(state.pendingDraft);
+  composer.applySettings(state.settings);
   composer.setConnected(conn);
   composer.setLocked(false);
 
   const catalog = jp.catalog || {};
   const networks = catalog.networks || [];
-  const lines = catalog.lines || [];
+  const lines = liveCatalogLines(catalog.lines);
   if (acc.loggedIn && jp.token && !catalog.loaded && !jp.catalogLoading) {
     call("REFRESH_JOYPROXY").catch(() => {});
   }
@@ -174,32 +176,47 @@ async function copyExitIp() {
   if (!ip) return;
   try {
     await navigator.clipboard.writeText(ip);
-    toast("已复制 IP");
+    toast(t("toast.copiedIp"));
   } catch {
     toast(ip);
   }
 }
 
 function openPanel() {
+  call("SAVE_SETTINGS", { settings: { panelMode: "side", panelModeRev: 1 } }).catch(() => {});
   const panelUrl = chrome.runtime.getURL("src/panel/panel.html");
-  const fallback = () =>
-    chrome.windows.create({
-      url: panelUrl,
-      type: "popup",
-      width: 420,
-      height: 780,
-      focused: true,
-    });
-  const fail = (err) => {
-    Promise.resolve(fallback()).catch(() => {
-      toast(err?.message || "无法打开工作台");
+  const fallback = (err) => {
+    const height = Math.max(560, Math.min(920, (screen.availHeight || 800) - 88));
+    const width = Math.max(400, Math.min(520, Math.round((screen.availWidth || 1280) * 0.32)));
+    Promise.resolve(
+      chrome.windows.create({
+        url: panelUrl,
+        type: "popup",
+        width,
+        height,
+        focused: true,
+      })
+    ).catch(() => {
+      toast(err?.message || t("toast.openPanelFail"));
     });
   };
+  const open = (windowId) => {
+    if (!chrome.sidePanel?.open) {
+      fallback();
+      return;
+    }
+    const req = windowId != null ? { windowId } : {};
+    Promise.resolve(chrome.sidePanel.open(req))
+      .then(() => window.close())
+      .catch(fallback);
+  };
   try {
-    const opened = chrome.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT });
-    Promise.resolve(opened).catch(fail);
+    chrome.windows.getCurrent((win) => {
+      if (chrome.runtime.lastError || !win?.id) open();
+      else open(win.id);
+    });
   } catch (err) {
-    fail(err);
+    fallback(err);
   }
 }
 

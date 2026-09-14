@@ -1,6 +1,7 @@
-html, body { height: 100%; }
+html, body { height: 100%; overflow: hidden; }
 body {
-  min-width: 360px;
+  min-width: 320px;
+  min-height: 0;
   background:
     radial-gradient(640px 280px at 0% -10%, rgba(102,126,234,.18), transparent 58%),
     var(--bg);
@@ -116,7 +117,7 @@ header {
 }
 .workspace.source {
   flex: 0 1 auto;
-  max-height: 58%;
+  max-height: 72%;
   min-height: 168px;
 }
 .workspace.lower {
@@ -198,7 +199,11 @@ header {
   margin-bottom: 8px;
 }
 #jp-run, #btn-extract { margin-top: 10px; }
-#jp-latest, #extract-latest { margin-top: 10px; }
+#jp-latest, #extract-latest {
+  margin-top: 10px;
+  max-height: 168px;
+  overflow: auto;
+}
 .jp-group { margin-bottom: 12px; }
 .jp-item {
   padding: 10px;
@@ -277,4 +282,9 @@ header {
 @media (max-width: 420px) {
   .composer-grid { grid-template-columns: 1fr 1fr; }
   .composer-grid [data-proto] { grid-column: 1 / -1; }
+}
+
+@media (max-height: 700px) {
+  .workspace.source { max-height: 68%; min-height: 132px; }
+  .workspace.lower { min-height: 120px; }
 }

@@ -13,6 +13,7 @@ function emptyDraft() {
 
 export function bindComposer(root) {
   const raw = root.querySelector("[data-raw]");
+  const portEl = root.querySelector("[data-port]");
   const user = root.querySelector("[data-user]");
   const pass = root.querySelector("[data-pass]");
   const proto = root.querySelector("[data-proto]");
@@ -31,27 +32,52 @@ export function bindComposer(root) {
   let locked = false;
   let profiles = [];
   let activeId = "";
+  let settings = { useLocalRelay: false, localRelayPort: 17890 };
   let suppressCommit = false;
 
+  function applyParsed(parsed) {
+    if (!parsed) return;
+    raw.value = parsed.host || "";
+    if (portEl) portEl.value = parsed.port ? String(parsed.port) : "";
+    if (parsed.protocol) protocol = asProto(parsed.protocol);
+    if (parsed.username) user.value = parsed.username;
+    if (parsed.password) pass.value = parsed.password;
+    syncProto();
+  }
+
+  function parseFromFields() {
+    const host = raw.value.trim();
+    const portText = (portEl?.value || "").trim();
+    return parseProxyInput(host, protocol) || (host && portText ? parseProxyInput(`${host}:${portText}`, protocol) : null);
+  }
+
   function read() {
-    const text = raw.value.trim();
-    const parsed = parseProxyInput(text, protocol) || {};
+    const parsed = parseFromFields() || {};
+    const host = parsed.host || raw.value.trim();
+    const port = parsed.port || Number((portEl?.value || "").trim()) || 0;
     return {
-      raw: text,
+      raw: host && port ? `${host}:${port}` : host,
       protocol,
       username: user.value.trim() || parsed.username || "",
       password: pass.value || parsed.password || "",
-      host: parsed.host,
-      port: parsed.port,
+      host,
+      port,
       activeId,
     };
   }
 
   function load(draft) {
-    raw.value = draft.raw || "";
+    protocol = asProto(draft.protocol);
+    const parsed = parseProxyInput(draft.raw || "", protocol);
+    if (parsed) {
+      raw.value = parsed.host;
+      if (portEl) portEl.value = String(parsed.port);
+    } else {
+      raw.value = draft.host || draft.raw || "";
+      if (portEl) portEl.value = draft.port ? String(draft.port) : "";
+    }
     user.value = draft.username || "";
     pass.value = draft.password || "";
-    protocol = asProto(draft.protocol);
     activeId = draft.activeId || "";
     syncProto();
     paintMeta();
@@ -59,11 +85,12 @@ export function bindComposer(root) {
   }
 
   function syncProto() {
-    for (const btn of proto.querySelectorAll("button")) {
-      btn.classList.toggle("active", btn.dataset.v === protocol);
+    if (proto) {
+      for (const btn of proto.querySelectorAll("button")) {
+        btn.classList.toggle("active", btn.dataset.v === protocol);
+      }
     }
-    const d = read();
-    if (socksHint) socksHint.hidden = !(protocol === "socks5" && (d.username || d.password));
+    if (socksHint) socksHint.hidden = true;
   }
 
   function paintMeta() {
@@ -74,9 +101,16 @@ export function bindComposer(root) {
     if (delBtn) delBtn.hidden = !saved;
   }
 
-  function matchProfile(text) {
-    const t = (text || "").trim();
-    return profiles.find((p) => `${p.host}:${p.port}` === t || p.name === t) || null;
+  function matchProfile(hostText, portText) {
+    const host = (hostText || "").trim();
+    const port = String(portText || "").trim();
+    const combined = port ? `${host}:${port}` : host;
+    return (
+      profiles.find((p) => `${p.host}:${p.port}` === combined) ||
+      (host && port ? profiles.find((p) => p.host === host && String(p.port) === port) : null) ||
+      profiles.find((p) => p.name === combined || p.name === host) ||
+      null
+    );
   }
 
   const combo = bindCombo({
@@ -89,13 +123,21 @@ export function bindComposer(root) {
         return {
           id: p.id,
           value,
+          host: p.host,
+          port: p.port,
           label: p.name && p.name !== value ? `${p.name} · ${value}` : value,
           active: p.id === activeId,
         };
       }),
     onSelect: async (item) => {
+      if (item.host) {
+        raw.value = item.host;
+        if (portEl) portEl.value = item.port ? String(item.port) : "";
+      } else {
+        applyParsed(parseProxyInput(item.value, protocol));
+      }
       if (item.id === activeId) {
-        raw.value = item.value;
+        paintConnectBtn();
         return;
       }
       await call("SELECT_PROFILE", { id: item.id });
@@ -140,10 +182,12 @@ export function bindComposer(root) {
     if (restore) {
       connectBtn.textContent = t("restore");
       connectBtn.classList.add("btn-danger");
+      connectBtn.title = t("restore.tip");
       return;
     }
     connectBtn.textContent = t("connect");
     connectBtn.classList.add("btn-primary");
+    connectBtn.title = t("connect.skipTip");
   }
 
   async function persist(extra = {}) {
@@ -153,7 +197,7 @@ export function bindComposer(root) {
     paintConnectBtn();
   }
 
-  async function run(type) {
+  async function run(type, extra = {}) {
     if (busy) return;
     if (locked && type !== "DISCONNECT") return;
     if (restoreInExtractTable() && type !== "DISCONNECT") return;
@@ -163,37 +207,41 @@ export function bindComposer(root) {
     busy = true;
     paintConnectBtn();
     try {
-      await call(type, type === "DISCONNECT" ? {} : { proxy });
+      await call(type, type === "DISCONNECT" ? {} : { proxy, ...extra });
     } finally {
       busy = false;
       paintConnectBtn();
     }
   }
 
-  proto.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-v]");
-    if (!btn) return;
-    protocol = asProto(btn.dataset.v);
-    syncProto();
-    persist({ protocol });
-  });
+  if (proto) {
+    proto.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-v]");
+      if (!btn) return;
+      protocol = asProto(btn.dataset.v);
+      syncProto();
+      persist({ protocol });
+    });
+  }
 
-  raw.addEventListener("paste", (e) => {
+  function onPasteProxy(e) {
     const text = (e.clipboardData || window.clipboardData).getData("text");
-    const parsed = parseProxyInput(text, protocol);
+    const parsed = parseProxyInput((text || "").trim(), protocol);
     if (!parsed) return;
     e.preventDefault();
-    raw.value = `${parsed.host}:${parsed.port}`;
-    if (parsed.protocol) protocol = asProto(parsed.protocol);
-    if (parsed.username) user.value = parsed.username;
-    if (parsed.password) pass.value = parsed.password;
-    syncProto();
+    applyParsed(parsed);
     persist();
-  });
+  }
+
+  raw.addEventListener("paste", onPasteProxy);
+  portEl?.addEventListener("paste", onPasteProxy);
 
   raw.addEventListener("change", async () => {
     if (suppressCommit) return;
-    const hit = matchProfile(raw.value);
+    const parsed = parseProxyInput(raw.value.trim(), protocol);
+    if (parsed) applyParsed(parsed);
+    const d = read();
+    const hit = matchProfile(d.host, d.port);
     if (hit && hit.id !== activeId) {
       await call("SELECT_PROFILE", { id: hit.id });
       return;
@@ -201,8 +249,15 @@ export function bindComposer(root) {
     await persist();
   });
 
-  for (const el of [raw, user, pass]) {
-    el.addEventListener("input", paintConnectBtn);
+  portEl?.addEventListener("change", async () => {
+    if (suppressCommit) return;
+    await persist();
+  });
+
+  for (const el of [raw, portEl, user, pass].filter(Boolean)) {
+    el.addEventListener("input", () => {
+      paintConnectBtn();
+    });
     if (el !== raw) el.addEventListener("blur", () => persist());
     el.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
@@ -213,12 +268,24 @@ export function bindComposer(root) {
   }
 
   testBtn.addEventListener("click", () => run("TEST"));
-  connectBtn.addEventListener("click", () => run(shouldRestore() ? "DISCONNECT" : "CONNECT"));
+  connectBtn.addEventListener("click", (e) => {
+    if (shouldRestore()) return run("DISCONNECT");
+    run("CONNECT", { skipTest: e.shiftKey });
+  });
 
   async function saveCurrent() {
     const d = read();
-    const parsed = parseProxyInput(d.raw || "", d.protocol);
-    if (!parsed) return false;
+    const parsed =
+      d.host && d.port
+        ? {
+            host: d.host,
+            port: Number(d.port),
+            protocol: asProto(d.protocol),
+            username: d.username,
+            password: d.password,
+          }
+        : parseProxyInput(d.raw || "", d.protocol);
+    if (!parsed?.host || !parsed?.port) return false;
     const same = profiles.find(
       (p) =>
         p.id !== activeId &&
@@ -295,6 +362,10 @@ export function bindComposer(root) {
     setLocked(on) {
       locked = Boolean(on);
       paintConnectBtn();
+    },
+    applySettings(next) {
+      if (!next) return;
+      settings = { ...settings, ...next };
     },
   };
 }
